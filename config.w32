@@ -1,0 +1,7 @@
+ARG_ENABLE('componere', 'componere support', 'no');
+
+if (PHP_COMPONERE != 'no') {
+	AC_DEFINE('HAVE_COMPONERE', 1, 'componere support enabled');
+
+	EXTENSION('componere', 'componere.c', null, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
+}
