@@ -22,6 +22,7 @@
 #include "php.h"
 #include "ext/standard/info.h"
 #include "ext/spl/spl_exceptions.h"
+#include "zend_exceptions.h"
 #include "zend_inheritance.h"
 #include "php_componere.h"
 
@@ -67,22 +68,10 @@ static inline void componere_inheritance(zend_class_entry *composed, zend_class_
 		}
 
 		composed->ce_flags = parent->ce_flags;
-
-		if (zend_string_equals_ci(composed->name, parent->name)) {
-			zend_string *name = NULL;
-			zend_function *function = NULL;
-
-			ZEND_HASH_FOREACH_STR_KEY_PTR(&composed->function_table, name, function) {
-				if (function->common.scope == parent) {
-					function->common.scope = composed;
-				}
-			} ZEND_HASH_FOREACH_END();
-
-			composed->parent = NULL;
-		}
 	} else {
 		composed->ce_flags |= ZEND_ACC_FINAL;		
 	}
+	composed->ce_flags |= ZEND_ACC_USE_GUARDS;
 }
 
 static inline zend_class_entry* componere_initialize(zend_string *name) {
@@ -191,6 +180,21 @@ static inline void componere_register_properties(zend_class_entry *composed, Has
 	} ZEND_HASH_FOREACH_END();
 }
 
+static inline void componere_scope_functions(zend_class_entry *composed, zend_class_entry *parent) {
+	if (parent && zend_string_equals_ci(composed->name, parent->name)) {
+		zend_string *name = NULL;
+		zend_function *function = NULL;
+
+		ZEND_HASH_FOREACH_STR_KEY_PTR(&composed->function_table, name, function) {
+			if (function->common.scope == parent) {
+				function->common.scope = composed;
+			}
+		} ZEND_HASH_FOREACH_END();
+
+		composed->parent = NULL;
+	}
+}
+
 /* {{{ proto bool compose(string name, array functions, [class parent, [array properties]]) */
 PHP_FUNCTION(compose)
 {
@@ -209,6 +213,7 @@ PHP_FUNCTION(compose)
 	componere_register_class(composed, name);
 	componere_register_functions(composed, functions);
 	componere_register_properties(composed, properties);
+	componere_scope_functions(composed, parent);
 
 	RETURN_TRUE;
 } /* }}} */
