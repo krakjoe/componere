@@ -15,17 +15,9 @@
   | Author: krakjoe <krakjoe@php.net>                                    |
   +----------------------------------------------------------------------+
  */
+#ifndef HAVE_COMPONERE_DEFINITION_H
+#define HAVE_COMPONERE_DEFINITION_H
 
-#ifndef PHP_COMPONERE_H
-# define PHP_COMPONERE_H
+extern PHP_MINIT_FUNCTION(Componere_Definition);
 
-extern zend_module_entry componere_module_entry;
-# define phpext_componere_ptr &componere_module_entry
-
-# define PHP_COMPONERE_VERSION "1.0.0"
-
-# if defined(ZTS) && defined(COMPILE_DL_COMPONERE)
-ZEND_TSRMLS_CACHE_EXTERN()
-# endif
-
-#endif	/* PHP_COMPONERE_H */
+#endif

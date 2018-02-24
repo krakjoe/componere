@@ -1,12 +1,15 @@
 --TEST--
-Disallow re-compose internal class
+Disallow re-composition of internal class
 --FILE--
 <?php 
-compose(RuntimeException::class, []);
+use Componere\Definition;
+
+(new Definition(RuntimeException::class))->register();
 ?>
 --EXPECTF--
-Fatal error: Uncaught RuntimeException: cannot redeclare internal class RuntimeException in %s:2
+Fatal error: Uncaught InvalidArgumentException: cannot redeclare internal class RuntimeException in %s:4
 Stack trace:
-#0 %s(2): compose('RuntimeExceptio...', Array)
+#0 %s(4): Componere\Definition->__construct('RuntimeExceptio...')
 #1 {main}
-  thrown in %s on line 2
+  thrown in %s on line 4
+

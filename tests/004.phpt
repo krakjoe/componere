@@ -1,18 +1,21 @@
 --TEST--
-Basic recomposition non-public
+Recomposition calling non-public method
 --FILE--
 <?php 
+use Componere\Definition;
+use Componere\Method;
+
 class A {
 	private function thing() {
 		return true;
 	}
 }
 
-compose(A::class, [
-	"member" => function() {
-		return self::thing();
-	}
-], A::class);
+$definition = new Definition(A::class);
+$definition->addMethod("member", new Method(function(){
+	return self::thing();
+}));
+$definition->register();
 
 $a = new A();
 

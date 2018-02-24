@@ -1,18 +1,21 @@
 --TEST--
-Basic composition with inheritance
+Composition with inheritance
 --FILE--
 <?php 
+use Componere\Definition;
+use Componere\Method;
+
 class A {
 	public function thing() {
 		return true;
 	}
 }
 
-compose(B::class, [
-	"member" => function() {
-		return parent::thing();
-	}
-], A::class);
+$definition = new Definition(B::class, A::class);
+$definition->addMethod("member", new Method(function(){
+	return parent::thing();
+}));
+$definition->register();
 
 $b = new B();
 

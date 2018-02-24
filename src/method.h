@@ -15,17 +15,22 @@
   | Author: krakjoe <krakjoe@php.net>                                    |
   +----------------------------------------------------------------------+
  */
+#ifndef HAVE_COMPONERE_METHOD_H
+#define HAVE_COMPONERE_METHOD_H
 
-#ifndef PHP_COMPONERE_H
-# define PHP_COMPONERE_H
+typedef struct _php_componere_method_t {
+	zend_function *function;
+	zend_object std;
+} php_componere_method_t;
 
-extern zend_module_entry componere_module_entry;
-# define phpext_componere_ptr &componere_module_entry
+#define php_componere_method_from(o) \
+	((php_componere_method_t*) \
+		((char*) o - XtOffsetOf(php_componere_method_t, std)))
+#define php_componere_method_fetch(z) php_componere_method_from(Z_OBJ_P(z))
+#define php_componere_method_function(z) (php_componere_method_fetch(z)->function)
 
-# define PHP_COMPONERE_VERSION "1.0.0"
+extern PHP_MINIT_FUNCTION(Componere_Method);
 
-# if defined(ZTS) && defined(COMPILE_DL_COMPONERE)
-ZEND_TSRMLS_CACHE_EXTERN()
-# endif
+extern zend_class_entry *php_componere_method_ce;
 
-#endif	/* PHP_COMPONERE_H */
+#endif

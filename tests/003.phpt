@@ -1,18 +1,21 @@
 --TEST--
-Basic recomposition
+Recomposition
 --FILE--
 <?php 
+use Componere\Definition;
+use Componere\Method;
+
 class A {
 	public function thing() {
 		return true;
 	}
 }
 
-compose(A::class, [
-	"member" => function() {
-		return false;
-	}
-], A::class);
+$definition = new Definition(A::class);
+$definition->addMethod("member", new Method(function(){
+	return false;
+}));
+$definition->register();
 
 $a = new A();
 

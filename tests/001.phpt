@@ -1,12 +1,15 @@
 --TEST--
-Basic composition
+Composition without inheritance
 --FILE--
 <?php 
-compose(A::class, [
-	"member" => function() {
-		return true;
-	}
-]);
+use Componere\Definition;
+use Componere\Method;
+
+$definition = new Definition(A::class);
+$definition->addMethod("member", new Method(function(){
+	return true;
+}));
+$definition->register();
 
 $a = new A();
 

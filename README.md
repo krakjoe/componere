@@ -9,9 +9,32 @@ This extension allows the composition and re-composition of classes at runtime, 
 API
 ===
 
-```
-<?php
-function compose(string $name, array $functions, string $parent = null, array $properties = []) : bool;
+```php
+namespace Componere {
+	class Definition {
+		public function __construct(string $name);
+		public function __construct(string $name, string $parent);
+		public function __construct(string $name, array $interfaces);
+		public function __construct(string $name, string $parent, array $interfaces);
+
+		public function addMethod(string $name, Method $method);
+		public function addTrait(string $name);
+		public function addProperty(string $name, Value $property);
+		public function addConstant(string $name, Value $constant);
+
+		public function register();
+	}
+	class Method {
+		public function __construct(string $name, Closure $method);
+		public function setProtected();
+		public function setPrivate();
+	}
+	class Value {
+		public function __construct(string $name, $value);
+		public function setProtected();
+		public function setPrivate();
+	}
+}
 ```
 
 Explanation
