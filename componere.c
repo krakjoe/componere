@@ -54,12 +54,20 @@ static inline void componere_magic(zend_class_entry *composed, zend_string *fnam
 	}
 }
 
-static inline void componere_inheritance(zend_class_entry *composed, zend_class_entry *parent) {
+static inline zend_string* componere_inheritance(zend_class_entry *composed, zend_class_entry *parent) {
+	zend_string *name = NULL;
+	
 	if (parent) {
 		zend_bool is_parent_final = 
 			parent->ce_flags & ZEND_ACC_FINAL;
 
 		parent->ce_flags &= ~ZEND_ACC_FINAL;
+
+		if (zend_string_equals_ci(composed->name, parent->name)) {
+			name = zend_string_copy(parent->name);
+		} else {
+			name = zend_string_copy(composed->name);
+		}
 
 		zend_do_inheritance(composed, parent);
 
@@ -69,19 +77,23 @@ static inline void componere_inheritance(zend_class_entry *composed, zend_class_
 
 		composed->ce_flags = parent->ce_flags;
 	} else {
-		composed->ce_flags |= ZEND_ACC_FINAL;		
+		composed->ce_flags |= ZEND_ACC_FINAL;
+		
+		name = zend_string_copy(composed->name);
 	}
 	composed->ce_flags |= ZEND_ACC_USE_GUARDS;
+
+	return name;
 }
 
 static inline zend_class_entry* componere_initialize(zend_string *name) {
 	zend_class_entry *composed = (zend_class_entry*) 
 		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
 
-	zend_initialize_class_data(composed, 1);
-	
 	composed->type = ZEND_USER_CLASS;
 	composed->name = zend_string_copy(name);
+
+	zend_initialize_class_data(composed, 1);
 
 	return composed;
 }
@@ -209,11 +221,13 @@ PHP_FUNCTION(compose)
 	}
 
 	composed = componere_initialize(name);
-	componere_inheritance(composed, parent);
+	name = componere_inheritance(composed, parent);
 	componere_register_class(composed, name);
 	componere_register_functions(composed, functions);
 	componere_register_properties(composed, properties);
 	componere_scope_functions(composed, parent);
+
+	zend_string_release(name);
 
 	RETURN_TRUE;
 } /* }}} */
