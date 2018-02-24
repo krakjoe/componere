@@ -54,9 +54,7 @@ static inline void componere_magic(zend_class_entry *composed, zend_string *fnam
 	}
 }
 
-static inline zend_string* componere_inheritance(zend_class_entry *composed, zend_class_entry *parent) {
-	zend_string *name = NULL;
-	
+static inline void componere_inheritance(zend_class_entry *composed, zend_class_entry *parent) {
 	if (parent) {
 		zend_bool is_parent_final = 
 			parent->ce_flags & ZEND_ACC_FINAL;
@@ -64,9 +62,23 @@ static inline zend_string* componere_inheritance(zend_class_entry *composed, zen
 		parent->ce_flags &= ~ZEND_ACC_FINAL;
 
 		if (zend_string_equals_ci(composed->name, parent->name)) {
-			name = zend_string_copy(parent->name);
-		} else {
-			name = zend_string_copy(composed->name);
+			if (parent->type != ZEND_USER_CLASS) {
+				zend_throw_exception_ex(spl_ce_RuntimeException, 0,
+					"cannot redeclare internal class %s", ZSTR_VAL(parent->name));
+				return;
+			}
+
+			if (parent->ce_flags & ZEND_ACC_INTERFACE) {
+				zend_throw_exception_ex(spl_ce_RuntimeException, 0,
+					"cannot redeclare interface %s", ZSTR_VAL(parent->name));
+				return;
+			}
+
+			if (parent->ce_flags & ZEND_ACC_TRAIT) {
+				zend_throw_exception_ex(spl_ce_RuntimeException, 0,
+					"cannot redeclare trait %s", ZSTR_VAL(parent->name));
+				return;
+			}
 		}
 
 		zend_do_inheritance(composed, parent);
@@ -78,12 +90,8 @@ static inline zend_string* componere_inheritance(zend_class_entry *composed, zen
 		composed->ce_flags = parent->ce_flags;
 	} else {
 		composed->ce_flags |= ZEND_ACC_FINAL;
-		
-		name = zend_string_copy(composed->name);
 	}
 	composed->ce_flags |= ZEND_ACC_USE_GUARDS;
-
-	return name;
 }
 
 static inline zend_class_entry* componere_initialize(zend_string *name) {
@@ -99,7 +107,13 @@ static inline zend_class_entry* componere_initialize(zend_string *name) {
 }
 
 static inline void componere_register_class(zend_class_entry *composed, zend_string *name) {
-	zend_string *key = zend_string_tolower(name);
+	zend_string *key;
+
+	if (EG(exception)) {
+		return;
+	}
+
+	key = zend_string_tolower(name);
 
 	if (!zend_hash_update_ptr(CG(class_table), key, composed)) {
 		zend_throw_exception_ex(spl_ce_RuntimeException, 0, "could not register %s", ZSTR_VAL(name));
@@ -140,7 +154,7 @@ static inline void componere_register_functions(zend_class_entry *composed, Hash
 	zend_string *name = NULL;
 	zval *function = NULL;
 
-	if (!functions) {
+	if (!functions || EG(exception)) {
 		return;
 	}
 
@@ -157,7 +171,7 @@ static inline void componere_register_properties(zend_class_entry *composed, Has
 	zend_string *property;
 	zval *value;
 
-	if (EG(exception) || !properties) {
+	if (!properties || EG(exception)) {
 		return;
 	}
 
@@ -193,7 +207,11 @@ static inline void componere_register_properties(zend_class_entry *composed, Has
 }
 
 static inline void componere_scope_functions(zend_class_entry *composed, zend_class_entry *parent) {
-	if (parent && zend_string_equals_ci(composed->name, parent->name)) {
+	if (!parent || EG(exception)) {
+		return;
+	}
+
+	if (zend_string_equals_ci(composed->name, parent->name)) {
 		zend_string *name = NULL;
 		zend_function *function = NULL;
 
@@ -220,14 +238,16 @@ PHP_FUNCTION(compose)
 		return;
 	}
 
+	if (!parent) {
+		parent = zend_lookup_class(name);
+	}
+
 	composed = componere_initialize(name);
-	name = componere_inheritance(composed, parent);
-	componere_register_class(composed, name);
+	componere_inheritance(composed, parent);
 	componere_register_functions(composed, functions);
 	componere_register_properties(composed, properties);
 	componere_scope_functions(composed, parent);
-
-	zend_string_release(name);
+	componere_register_class(composed, name);
 
 	RETURN_TRUE;
 } /* }}} */
