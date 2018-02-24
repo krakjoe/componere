@@ -5,8 +5,15 @@ php:
   - 7.2
   - nightly
 
+env:
+  global:
+    - REPORT_EXIT_STATUS=1
+  matrix:
+    - TEST_PHP_ARGS="-m -q --show-diff"
+    - TEST_PHP_ARGS="-q --show-diff"
+
 script:
   - phpize
   - ./configure
   - make
-  - REPORT_EXIT_STATUS=1 TEST_PHP_ARGS="-q --show-diff -m" make test
+  - make test
