@@ -11,7 +11,7 @@ API
 
 ```
 <?php
-function compose(string $name, array $functions, string $parent = null, array $properties = []);
+function compose(string $name, array $functions, string $parent = null, array $properties = []) : bool;
 ```
 
 Explanation
