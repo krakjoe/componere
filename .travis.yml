@@ -1,0 +1,12 @@
+language: php
+php:
+  - 7.0
+  - 7.1
+  - 7.2
+  - nightly
+
+script:
+  - phpize
+  - ./configure
+  - make
+  - REPORT_EXIT_STATUS=1 TEST_PHP_ARGS="-q --show-diff -m" make test
