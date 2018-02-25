@@ -19,5 +19,4 @@
 #define HAVE_COMPONERE_DEFINITION_H
 
 extern PHP_MINIT_FUNCTION(Componere_Definition);
-
 #endif

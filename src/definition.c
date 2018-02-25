@@ -72,9 +72,21 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 
 		destroy_zend_class(&tmp);
 	} else if (o->saved) {
-		ZVAL_PTR(&tmp, o->saved);
+		zend_string *name = 
+			zend_string_tolower(o->saved->name);
+		zend_class_entry *ce = 
+			zend_hash_find_ptr(CG(class_table), name);
 
-		destroy_zend_class(&tmp);
+		if (ce) {
+			zend_hash_del(CG(class_table), name);
+		
+			memcpy(ce, o->saved, sizeof(zend_class_entry));
+
+			zend_hash_update_ptr(
+				CG(class_table), name, ce);
+		}
+
+		zend_string_release(name);
 	}
 
 	zend_object_std_dtor(&o->std);
@@ -193,25 +205,6 @@ PHP_METHOD(Definition, __construct)
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_register, 0, 0, 0)
 ZEND_END_ARG_INFO()
-
-static inline void componere_scope_functions(zend_class_entry *composed, zend_class_entry *parent) {
-	if (!parent || EG(exception)) {
-		return;
-	}
-
-	if (zend_string_equals_ci(composed->name, parent->name)) {
-		zend_string *name = NULL;
-		zend_function *function = NULL;
-
-		ZEND_HASH_FOREACH_STR_KEY_PTR(&composed->function_table, name, function) {
-			if (function->common.scope == parent) {
-				function->common.scope = composed;
-			}
-		} ZEND_HASH_FOREACH_END();
-
-		composed->parent = NULL;
-	}
-}
 
 PHP_METHOD(Definition, register)
 {	
@@ -442,7 +435,7 @@ static zend_function_entry php_componere_definition_methods[] = {
 
 PHP_MINIT_FUNCTION(Componere_Definition) {
 	zend_class_entry ce;
-
+	
 	INIT_NS_CLASS_ENTRY(ce, "Componere", "Definition", php_componere_definition_methods);
 
 	php_componere_definition_ce = zend_register_internal_class(&ce);
@@ -452,6 +445,7 @@ PHP_MINIT_FUNCTION(Componere_Definition) {
 
 	php_componere_definition_handlers.offset = XtOffsetOf(php_componere_definition_t, std);
 	php_componere_definition_handlers.free_obj = php_componere_definition_destroy;
+
 }
 
 #endif

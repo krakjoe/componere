@@ -27,6 +27,23 @@
 #include "src/method.h"
 #include "src/value.h"
 
+static inline void php_componere_optimizer_adjust()
+{
+	zend_string *key = zend_string_init(ZEND_STRL("opcache.optimization_level"), 0);
+	zend_string *value;
+	zend_long optimizer = zend_ini_long(ZSTR_VAL(key), ZSTR_LEN(key), 0);
+	
+	if (optimizer) {
+		/* @TODO(krakjoe) better */
+		value = zend_string_init(ZEND_STRL("0x7fffff0ff"), 0);
+
+		zend_alter_ini_entry(key, value, PHP_INI_SYSTEM, PHP_INI_STAGE_ACTIVATE);
+
+		zend_string_release(value);
+	}
+	zend_string_release(key);
+}
+
 PHP_MINIT_FUNCTION(componere)
 {
 	PHP_MINIT(Componere_Definition)(INIT_FUNC_ARGS_PASSTHRU);
@@ -35,6 +52,7 @@ PHP_MINIT_FUNCTION(componere)
 
 	return SUCCESS;
 }
+
 /* {{{ PHP_RINIT_FUNCTION
  */
 PHP_RINIT_FUNCTION(componere)
@@ -42,6 +60,8 @@ PHP_RINIT_FUNCTION(componere)
 #if defined(ZTS) && defined(COMPILE_DL_COMPONERE)
 	ZEND_TSRMLS_CACHE_UPDATE();
 #endif
+
+	php_componere_optimizer_adjust();
 
 	return SUCCESS;
 }
@@ -61,7 +81,6 @@ PHP_MINFO_FUNCTION(componere)
  */
 ZEND_BEGIN_ARG_INFO(compose_arginfo, 0)
 ZEND_END_ARG_INFO()
-
 
 /* {{{ componere_functions[]
  */
