@@ -36,6 +36,7 @@ zend_object_handlers php_componere_definition_handlers;
 
 typedef struct _php_componere_definition_t {
 	zend_class_entry *ce;
+	zend_class_entry *saved;
 	zend_bool registered;
 	zend_object std;
 } php_componere_definition_t;
@@ -64,11 +65,14 @@ static inline zend_object* php_componere_definition_create(zend_class_entry *ce)
 
 static inline void php_componere_definition_destroy(zend_object *zo) {
 	php_componere_definition_t *o = php_componere_definition_from(zo);
+	zval tmp;
 
 	if (!o->registered) {
-		zval tmp;
-
 		ZVAL_PTR(&tmp, o->ce);
+
+		destroy_zend_class(&tmp);
+	} else if (o->saved) {
+		ZVAL_PTR(&tmp, o->saved);
 
 		destroy_zend_class(&tmp);
 	}
@@ -215,8 +219,6 @@ PHP_METHOD(Definition, register)
 		php_componere_definition_fetch(getThis());
 	zend_string *name = zend_string_tolower(o->ce->name);
 
-	
-
 	if (o->registered) {
 		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
 			"could not re-register %s", ZSTR_VAL(o->ce->name));
@@ -233,6 +235,9 @@ PHP_METHOD(Definition, register)
 				function->common.scope = o->ce;
 			}
 		} ZEND_HASH_FOREACH_END();
+
+		o->saved = o->ce->parent;
+		o->saved->refcount++;
 
 		o->ce->parent = NULL;
 	}
