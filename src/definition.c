@@ -79,9 +79,24 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 			zend_hash_find_ptr(CG(class_table), name);
 
 		if (ce) {
+			zend_function *function;
+			zend_property_info *info;
+
 			zend_hash_del(CG(class_table), name);
-		
+
 			memcpy(ce, o->saved, sizeof(zend_class_entry));
+
+			ZEND_HASH_FOREACH_PTR(&ce->function_table, function) {
+				if (zend_string_equals(function->common.scope->name, o->ce->name)) {
+					function->common.scope = ce;
+				}
+			} ZEND_HASH_FOREACH_END();
+
+			ZEND_HASH_FOREACH_PTR(&o->ce->properties_info, info) {
+				if (zend_string_equals(info->ce->name, o->ce->name)) {
+					info->ce = ce;
+				}
+			} ZEND_HASH_FOREACH_END();
 
 			zend_hash_update_ptr(
 				CG(class_table), name, ce);
@@ -223,10 +238,17 @@ PHP_METHOD(Definition, register)
 	if (o->ce->parent && zend_string_equals_ci(o->ce->name, o->ce->parent->name)) {
 		zend_string *name = NULL;
 		zend_function *function = NULL;
+		zend_property_info *info = NULL;
 
 		ZEND_HASH_FOREACH_STR_KEY_PTR(&o->ce->function_table, name, function) {
 			if (function->common.scope == o->ce->parent) {
 				function->common.scope = o->ce;
+			}
+		} ZEND_HASH_FOREACH_END();
+
+		ZEND_HASH_FOREACH_STR_KEY_PTR(&o->ce->properties_info, name, info) {
+			if (info->ce == o->ce->parent) {
+				info->ce = o->ce;
 			}
 		} ZEND_HASH_FOREACH_END();
 
