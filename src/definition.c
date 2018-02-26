@@ -25,6 +25,7 @@
 #include <php.h>
 
 #include <ext/spl/spl_exceptions.h>
+#include <zend_closures.h>
 #include <zend_exceptions.h>
 #include <zend_inheritance.h>
 
@@ -423,6 +424,41 @@ PHP_METHOD(Definition, addConstant)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_closure, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_INFO(0, scope)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Definition, getClosure)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+	zend_string *name = NULL;
+	zend_string *key = NULL;
+	zend_function *function = NULL;
+	zval *scope = NULL;
+
+	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "S|z", &name, &scope) != SUCCESS) {
+		return;
+	}
+
+	if (o->registered) {
+		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
+			"cannot get closure after registration");
+		return;
+	}
+
+	key = zend_string_tolower(name);
+	function = zend_hash_find_ptr(&o->ce->function_table, key);
+
+	if (!function) {
+		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0,
+			"could not find %s::%s", ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+	} else {
+		zend_create_closure(return_value, function, o->ce, o->ce, scope);
+	}
+	zend_string_release(key);
+}
+
 static zend_function_entry php_componere_definition_methods[] = {
 	PHP_ME(Definition, __construct, php_componere_definition_construct, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addMethod, php_componere_definition_method, ZEND_ACC_PUBLIC)
@@ -430,6 +466,8 @@ static zend_function_entry php_componere_definition_methods[] = {
 	PHP_ME(Definition, addProperty, php_componere_definition_property, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, register, php_componere_definition_register, ZEND_ACC_PUBLIC)
+
+	PHP_ME(Definition, getClosure, php_componere_definition_closure, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
