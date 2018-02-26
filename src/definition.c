@@ -481,6 +481,39 @@ PHP_METHOD(Definition, getClosure)
 	zend_string_release(key);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_closures, 0, 0, 0)
+	ZEND_ARG_INFO(0, scope)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Definition, getClosures)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+	zend_string *name = NULL;
+	zend_function *function = NULL;
+	zval *scope = NULL;
+
+	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "|z", &scope) != SUCCESS) {
+		return;
+	}
+
+	if (o->registered) {
+		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
+			"cannot get closures after registration");
+		return;
+	}
+
+	array_init(return_value);
+
+	ZEND_HASH_FOREACH_STR_KEY_PTR(&o->ce->function_table, name, function) {
+		zval closure;
+
+		zend_create_closure(&closure, function, o->ce, o->ce, scope);		
+
+		zend_hash_add(
+			Z_ARRVAL_P(return_value), name, &closure);
+	} ZEND_HASH_FOREACH_END();
+}
+
 static zend_function_entry php_componere_definition_methods[] = {
 	PHP_ME(Definition, __construct, php_componere_definition_construct, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addMethod, php_componere_definition_method, ZEND_ACC_PUBLIC)
@@ -490,6 +523,7 @@ static zend_function_entry php_componere_definition_methods[] = {
 	PHP_ME(Definition, register, php_componere_definition_register, ZEND_ACC_PUBLIC)
 
 	PHP_ME(Definition, getClosure, php_componere_definition_closure, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, getClosures, php_componere_definition_closures, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
