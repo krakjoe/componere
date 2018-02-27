@@ -458,9 +458,6 @@ PHP_METHOD(Definition, addMethod)
 
 	function->common.scope = o->ce;
 
-	zend_string_release(function->common.function_name);
-	function->common.function_name = zend_string_copy(name);
-
 	name = zend_string_tolower(name);
 
 	zend_hash_update_ptr(&o->ce->function_table, name, function);

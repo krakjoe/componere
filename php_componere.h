@@ -22,7 +22,7 @@
 extern zend_module_entry componere_module_entry;
 # define phpext_componere_ptr &componere_module_entry
 
-# define PHP_COMPONERE_VERSION "1.2.2"
+# define PHP_COMPONERE_VERSION "1.2.3"
 
 # if defined(ZTS) && defined(COMPILE_DL_COMPONERE)
 ZEND_TSRMLS_CACHE_EXTERN()
