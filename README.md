@@ -22,8 +22,8 @@ namespace Componere {
 		public function addProperty(string $name, Value $property);
 		public function addConstant(string $name, Value $constant);
 
-		public function getClosure(string $name, $this = null) : Closure;
-		public function getClosures($this = null) : array;
+		public function getClosure(string $name) : Closure;
+		public function getClosures() : array;
  
 		public function register();
 	}

@@ -605,7 +605,6 @@ PHP_METHOD(Definition, addConstant)
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_closure, 0, 0, 1)
 	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_INFO(0, scope)
 ZEND_END_ARG_INFO()
 
 PHP_METHOD(Definition, getClosure)
@@ -614,9 +613,8 @@ PHP_METHOD(Definition, getClosure)
 	zend_string *name = NULL;
 	zend_string *key = NULL;
 	zend_function *function = NULL;
-	zval *scope = NULL;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "S|z", &name, &scope) != SUCCESS) {
+	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "S", &name) != SUCCESS) {
 		return;
 	}
 
@@ -633,7 +631,7 @@ PHP_METHOD(Definition, getClosure)
 		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0,
 			"could not find %s::%s", ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
 	} else {
-		zend_create_closure(return_value, function, o->ce, o->ce, scope);
+		zend_create_closure(return_value, function, o->ce, o->ce, NULL);
 	}
 	zend_string_release(key);
 }
@@ -645,11 +643,9 @@ ZEND_END_ARG_INFO()
 PHP_METHOD(Definition, getClosures)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
-	zend_string *name = NULL;
 	zend_function *function = NULL;
-	zval *scope = NULL;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "|z", &scope) != SUCCESS) {
+	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "") != SUCCESS) {
 		return;
 	}
 
@@ -661,13 +657,13 @@ PHP_METHOD(Definition, getClosures)
 
 	array_init(return_value);
 
-	ZEND_HASH_FOREACH_STR_KEY_PTR(&o->ce->function_table, name, function) {
+	ZEND_HASH_FOREACH_PTR(&o->ce->function_table, function) {
 		zval closure;
 
-		zend_create_closure(&closure, function, o->ce, o->ce, scope);		
+		zend_create_closure(&closure, function, o->ce, o->ce, NULL);		
 
 		zend_hash_add(
-			Z_ARRVAL_P(return_value), name, &closure);
+			Z_ARRVAL_P(return_value), function->common.function_name, &closure);
 	} ZEND_HASH_FOREACH_END();
 }
 
