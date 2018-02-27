@@ -6,8 +6,14 @@ use Componere\Definition;
 use Componere\Method;
 
 class A {
+	/**
+	* @comment
+	**/
 	public $p = 1;
 	static $s = 2;
+	/**
+	* @comment
+	**/
 	const  C  = 3;
 }
 

@@ -6,6 +6,8 @@ use Componere\Definition;
 use Componere\Method;
 
 class A {
+	public $prop = 42;
+
 	public function thing() {
 		return true;
 	}

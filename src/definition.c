@@ -157,49 +157,44 @@ static inline int php_componere_definition_constant_fix(zval *zv, zend_class_ent
 
 static inline void php_componere_definition_magic(zend_class_entry *ce, zend_class_entry *parent)
 {
+#define php_componere_definition_magic_find(c, f) \
+	zend_hash_str_find_ptr(&c->function_table, ZEND_STRL(f))
 	if (parent->constructor)
-		ce->constructor = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__construct"));
+		ce->constructor = php_componere_definition_magic_find(ce, "__construct");
 	if (parent->destructor)
-		ce->destructor = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__destruct"));
+		ce->destructor = php_componere_definition_magic_find(ce, "__destruct");
 	if (parent->clone)
-		ce->clone = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__clone"));
+		ce->clone = php_componere_definition_magic_find(ce, "__clone");
 	if (parent->__get)
-		ce->__get = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__get"));
+		ce->__get = php_componere_definition_magic_find(ce, "__get");
 	if (parent->__set)
-		ce->__set = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__set"));
+		ce->__set = php_componere_definition_magic_find(ce, "__set");
 	if (parent->__unset)
-		ce->__unset = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__unset"));
+		ce->__unset = php_componere_definition_magic_find(ce, "__unset");
 	if (parent->__call)
-		ce->__call = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__call"));
+		ce->__call = php_componere_definition_magic_find(ce, "__call");
 	if (parent->__callstatic)
-		ce->__callstatic = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__callstatic"));
+		ce->__callstatic = php_componere_definition_magic_find(ce, "__callstatic");
 	if (parent->__tostring)
-		ce->__tostring = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__tostring"));
+		ce->__tostring = php_componere_definition_magic_find(ce, "__tostring");
 	if (parent->__debugInfo)
-		ce->__debugInfo = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("__debuginfo"));
+		ce->__debugInfo = php_componere_definition_magic_find(ce, "__debuginfo");
 	if (parent->serialize_func)
-		ce->serialize_func = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("serialize"));
+		ce->serialize_func = php_componere_definition_magic_find(ce, "serialize");
 	if (parent->unserialize_func)
-		ce->unserialize_func = zend_hash_str_find_ptr(&ce->function_table, ZEND_STRL("unserialize"));
+		ce->unserialize_func = php_componere_definition_magic_find(ce, "unserialize");
+#undef php_componere_definition_magic_find
 }
 
 static inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
 {
 	zend_class_entry* pair[2] = {ce, parent};
 
-	if (parent->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_TRAIT)) {
-		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
-			"cannot redeclare %s %s",
-			parent->ce_flags & ZEND_ACC_INTERFACE ? "interface" : "trait",
-			ZSTR_VAL(parent->name));
-		return;
-	}
-
 	if (parent->num_interfaces) {
 		ce->interfaces = (zend_class_entry **) 
 			ecalloc(parent->num_interfaces, sizeof(zend_class_entry*));
 
-		memcpy(ce->interfaces, parent->interfaces, 
+		memcpy(ce->interfaces, parent->interfaces,
 			sizeof(zend_class_entry*) * parent->num_interfaces);
 
 		ce->num_interfaces = parent->num_interfaces;
@@ -271,14 +266,7 @@ static inline void php_componere_definition_copy(zend_class_entry *ce, zend_clas
 
 static inline void php_componere_definition_destroy(zend_object *zo) {
 	php_componere_definition_t *o = php_componere_definition_from(zo);
-
-	if (!o->registered) {
-		zval tmp;
-
-		ZVAL_PTR(&tmp, o->ce);
-
-		destroy_zend_class(&tmp);
-	}
+	zval tmp;
 
 	if (o->saved) {
 		zend_string *name = 
@@ -297,16 +285,22 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 
 			zend_hash_apply_with_argument(&ce->function_table, 
 				(apply_func_arg_t) php_componere_definition_method_fix, &pair);
-			zend_hash_apply_with_argument(&ce->function_table, 
+			zend_hash_apply_with_argument(&ce->properties_info, 
 				(apply_func_arg_t) php_componere_definition_property_fix, &pair);
 #if PHP_VERSION_ID >= 70100
-			zend_hash_apply_with_argument(&ce->function_table,
+			zend_hash_apply_with_argument(&ce->constants_table,
 				(apply_func_arg_t) php_componere_definition_constant_fix, &pair);
 #endif
 			zend_hash_update_ptr(CG(class_table), name, ce);
 		}
 
 		zend_string_release(name);
+	}
+
+	if (!o->registered || o->ce->refcount > 1) {
+		ZVAL_PTR(&tmp, o->ce);
+
+		destroy_zend_class(&tmp);
 	}
 
 	zend_object_std_dtor(&o->std);
@@ -412,7 +406,7 @@ ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_register, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
 PHP_METHOD(Definition, register)
-{	
+{
 	php_componere_definition_t *o = 
 		php_componere_definition_fetch(getThis());
 	zend_string *name = zend_string_tolower(o->ce->name);
@@ -424,14 +418,9 @@ PHP_METHOD(Definition, register)
 		return;
 	}
 
-	if (!zend_hash_update_ptr(CG(class_table), name, o->ce)) {
-		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
-			"could not register %s", ZSTR_VAL(o->ce->name));
-	} else {
-		o->registered = 1;
-	}
-
+	zend_hash_update_ptr(CG(class_table), name, o->ce);
 	zend_string_release(name);
+	o->registered = 1;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_method, 0, 0, 2)
@@ -459,7 +448,7 @@ PHP_METHOD(Definition, addMethod)
 	}
 
 	function = php_componere_method_function(method);
-
+	
 	if (function->common.scope) {
 		zend_throw_exception_ex(spl_ce_RuntimeException, 0, 
 			"method was already added to %s", 
@@ -469,13 +458,14 @@ PHP_METHOD(Definition, addMethod)
 
 	function->common.scope = o->ce;
 
+	zend_string_release(function->common.function_name);
+	function->common.function_name = zend_string_copy(name);
+
 	name = zend_string_tolower(name);
 
-	if (!zend_hash_update_ptr(&o->ce->function_table, name, function)) {
-		zend_throw_exception_ex(spl_ce_RuntimeException, 0, "failed to add method");
-	} else {
-		function_add_ref(function);
-	}
+	zend_hash_update_ptr(&o->ce->function_table, name, function);
+	
+	function_add_ref(function);
 
 	if (zend_string_equals_literal(name, "__construct")) {
 		o->ce->constructor = function;
@@ -547,13 +537,13 @@ PHP_METHOD(Definition, addProperty)
 	zval *value;
 
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "SO", &name, &value, php_componere_value_ce) != SUCCESS) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "name and property expected");
+		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "name and value expected");
 		return;
 	}
 
 	if (zend_get_property_info(o->ce, name, 1)) {
 		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0,
-			"cannot redeclare %s::%s",
+			"cannot redeclare %s::$%s",
 			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
 		return;
 	}
@@ -585,11 +575,11 @@ PHP_METHOD(Definition, addConstant)
 	zval *value;
 
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "SO", &name, &value, php_componere_value_ce) != SUCCESS) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "name and property expected");
+		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "name and value expected");
 		return;
 	}
 
-	if (zend_get_property_info(o->ce, name, 1)) {
+	if (zend_hash_exists(&o->ce->constants_table, name)) {
 		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0,
 			"cannot redeclare %s::%s",
 			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
@@ -598,7 +588,7 @@ PHP_METHOD(Definition, addConstant)
 
 	if (o->registered) {
 		zend_throw_exception_ex(spl_ce_RuntimeException, 0, 
-			"%s is already registered, cannot add property %s", 
+			"%s is already registered, cannot add constant %s", 
 			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
 		return;
 	}
