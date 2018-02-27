@@ -187,6 +187,19 @@ static inline void php_componere_definition_magic(zend_class_entry *ce, zend_cla
 #undef php_componere_definition_magic_find
 }
 
+static inline void php_componere_definition_parent(zend_class_entry *ce, zend_class_entry *parent) {
+	zend_class_entry **pce = &ce->parent;
+
+	do {
+		if (!(*pce)) {
+			(*pce) = parent;
+			break;
+		}
+
+		pce = &(*pce)->parent;
+	} while ((*pce));
+}
+
 static inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
 {
 	zend_class_entry* pair[2] = {ce, parent};
@@ -263,19 +276,6 @@ static inline void php_componere_definition_copy(zend_class_entry *ce, zend_clas
 
 	ce->ce_flags |= parent->ce_flags;
 	ce->parent = parent->parent;
-
-	{
-		zend_class_entry **pce = &ce->parent;
-
-		do {
-			if (!(*pce)) {
-				(*pce) = parent;
-				break;
-			}
-
-			pce = &(*pce)->parent;
-		} while ((*pce));
-	}
 }
 
 static inline void php_componere_definition_destroy(zend_object *zo) {
@@ -388,6 +388,11 @@ PHP_METHOD(Definition, __construct)
 	} else if(pce) {
 		zend_do_inheritance(o->ce, pce);
 	}
+
+	if (pce) {
+		php_componere_definition_parent(o->ce, pce);
+	}
+
 	o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 
 	if (interfaces) {
