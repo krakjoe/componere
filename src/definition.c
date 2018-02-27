@@ -727,9 +727,7 @@ PHP_METHOD(Definition, patch)
 		return;
 	}
 
-	if (!zend_string_equals_ci(zo->ce->name, o->ce->name) && 
-		!instanceof_function(o->ce, zo->ce) && 
-		!instanceof_function(zo->ce, o->ce)) {
+	if (!instanceof_function(o->ce, zo->ce) && !instanceof_function(zo->ce, o->ce)) {
 		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
 			"cannot patch with %s, incompatible with %s", ZSTR_VAL(o->ce->name), ZSTR_VAL(zo->ce->name));
 		return;
