@@ -77,11 +77,6 @@ PHP_MINFO_FUNCTION(componere)
 }
 /* }}} */
 
-/* {{{ arginfo
- */
-ZEND_BEGIN_ARG_INFO(compose_arginfo, 0)
-ZEND_END_ARG_INFO()
-
 /* {{{ componere_functions[]
  */
 static const zend_function_entry componere_functions[] = {

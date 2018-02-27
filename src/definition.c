@@ -275,8 +275,6 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 			zend_hash_find_ptr(CG(class_table), name);
 
 		if (ce) {
-			zend_function *function;
-			zend_property_info *info;
 			zend_class_entry *pair[2] = {ce, o->saved};
 
 			zend_hash_del(CG(class_table), name);
@@ -693,6 +691,7 @@ PHP_MINIT_FUNCTION(Componere_Definition) {
 	php_componere_definition_handlers.offset = XtOffsetOf(php_componere_definition_t, std);
 	php_componere_definition_handlers.free_obj = php_componere_definition_destroy;
 
+	return SUCCESS;
 }
 
 #endif
