@@ -14,7 +14,9 @@ namespace Componere {
 	class Definition {
 		public function __construct(string $name);
 		public function __construct(string $name, string $parent);
+		public function __construct(string $name, Definition $parent);
 		public function __construct(string $name, array $interfaces);
+		public function __construct(string $name, Definition $parent, array $interfaces);
 		public function __construct(string $name, string $parent, array $interfaces);
 
 		public function addMethod(string $name, Method $method);
@@ -26,6 +28,9 @@ namespace Componere {
 		public function getClosures() : array;
  
 		public function register();
+
+		/* here be dragons, possibly */
+		public function patch(Object $instance);
 	}
 	class Method {
 		public function __construct(string $name, Closure $method);
