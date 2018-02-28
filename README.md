@@ -4,7 +4,11 @@ componere
 
 [![Build Status](https://travis-ci.org/krakjoe/componere.svg?branch=master)](https://travis-ci.org/krakjoe/componere)
 
-This extension allows the composition and re-composition of classes at runtime, using dark scary magic, but of the kind you might take to production.
+This extension allows the composition and re-composition of classes at runtime.
+
+This extension also allows monkey patching an instance with a runtime composed class.
+
+All of this is done using dark scary magic, but of the kind you might take to production.
 
 API
 ===
