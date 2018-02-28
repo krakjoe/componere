@@ -1,5 +1,5 @@
 --TEST--
-Definition::patch disallow internal class patch
+Disallow patching objects of an internal class
 --FILE--
 <?php
 use Componere\Patch;

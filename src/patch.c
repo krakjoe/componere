@@ -73,10 +73,22 @@ PHP_METHOD(Patch, __construct)
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_class_entry *pce = NULL;
 	zval *pd = NULL;
+	HashTable *interfaces = NULL;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "o", &pd) != SUCCESS) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "name or instance expected as single argument");
-		return;
+	switch (ZEND_NUM_ARGS()) {
+		case 2: if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "oH", &pd, &interfaces) != SUCCESS) {
+			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "instance and interfaces expected");
+			return;
+		} break;
+
+		case 1: if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "o", &pd) != SUCCESS) {
+			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, " instance expected as single argument");
+			return;
+		} break;
+
+		default:
+			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "instance, or instance and interfaces expected");
+			return;
 	}
 
 	if (Z_OBJCE_P(pd)->type != ZEND_USER_CLASS) {
@@ -98,6 +110,38 @@ PHP_METHOD(Patch, __construct)
 	o->saved = pce;
 
 	ZVAL_COPY(&o->instance, pd);
+
+	if (interfaces) {
+		zval *interface = NULL;
+
+		ZEND_HASH_FOREACH_VAL(interfaces, interface) {
+			zend_class_entry *ce;
+
+			if (Z_TYPE_P(interface) == IS_STRING) {
+				ce = zend_lookup_class(Z_STR_P(interface));
+
+				if (!ce) {
+					zend_throw_exception_ex(spl_ce_RuntimeException, 0, 
+						"could not find interface %s", 
+						Z_STRVAL_P(interface));
+					break;
+				}
+
+				if ((ce->ce_flags & ZEND_ACC_INTERFACE) != ZEND_ACC_INTERFACE) {
+					zend_throw_exception_ex(spl_ce_RuntimeException, 0, 
+						"%s is not an interface", 
+						Z_STRVAL_P(interface));
+					break;
+				}
+
+				if (!instanceof_function(o->ce, ce)) {
+					zend_do_implement_interface(o->ce, ce);
+				}
+			}
+		} ZEND_HASH_FOREACH_END();
+
+		o->ce->ce_flags &= ~ZEND_ACC_IMPLICIT_ABSTRACT_CLASS;
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_patch_no_arginfo, 0, 0, 0)
@@ -129,8 +173,61 @@ PHP_METHOD(Patch, revert)
 	zo->ce = o->saved;
 }
 
+ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_patch_closure, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Patch, getClosure)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+	zend_string *name = NULL;
+	zend_string *key = NULL;
+	zend_function *function = NULL;
+
+	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "S", &name) != SUCCESS) {
+		return;
+	}
+
+	key = zend_string_tolower(name);
+	function = zend_hash_find_ptr(&o->ce->function_table, key);
+
+	if (!function) {
+		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0,
+			"could not find %s::%s", ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+	} else {
+		zend_create_closure(return_value, function, o->ce, o->ce, &o->instance);
+	}
+	zend_string_release(key);
+}
+
+ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_patch_closures, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Patch, getClosures)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+	zend_function *function = NULL;
+
+	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "") != SUCCESS) {
+		return;
+	}
+
+	array_init(return_value);
+
+	ZEND_HASH_FOREACH_PTR(&o->ce->function_table, function) {
+		zval closure;
+
+		zend_create_closure(&closure, function, o->ce, o->ce, &o->instance);		
+
+		zend_hash_add(
+			Z_ARRVAL_P(return_value), function->common.function_name, &closure);
+	} ZEND_HASH_FOREACH_END();
+}
+
 static zend_function_entry php_componere_definition_patch_methods[] = {
 	PHP_ME(Patch, __construct, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, getClosure, php_componere_definition_patch_closure, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, getClosures, php_componere_definition_patch_closures, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, apply, php_componere_definition_patch_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, revert, php_componere_definition_patch_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END

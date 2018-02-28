@@ -17,28 +17,32 @@ API
 namespace Componere {
 	namespace Abstract {
 		abstract class Definition {
-			public function addMethod(string $name, Method $method);
 			public function addTrait(string $name);
-			public function addProperty(string $name, Value $property);
-			public function addConstant(string $name, Value $constant);
-
-			public function getClosure(string $name) : Closure;
-			public function getClosures() : array;
+			public function addInterface(string $name);
+			public function addMethod(string $name, Method $method);
 		}
 	}
 
 	class Definition extends Abstract\Definition {
 		public function __construct(string $name);
 		public function __construct(string $name, string $parent);
-		public function __construct(string $name, Definition $parent);
 		public function __construct(string $name, array $interfaces);
-		public function __construct(string $name, Definition $parent, array $interfaces);
 		public function __construct(string $name, string $parent, array $interfaces);
- 
+
+		public function addProperty(string $name, Value $property);
+		public function addConstant(string $name, Value $constant); 
+
+		public function getClosure(string $name) : Closure;
+		public function getClosures() : array;
+
 		public function register();
 	}
 	class Patch extends Abstract\Definition {
 		public function __construct(object $instance);
+		public function __construct(object $instance, array $interfaces);
+
+		public function getClosure(string $name) : Closure;
+		public function getClosures() : array;
 
 		public function apply();
 		public function revert();

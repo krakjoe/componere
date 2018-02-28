@@ -315,7 +315,6 @@ PHP_METHOD(Definition, __construct)
 	zend_string *parent = NULL;
 	HashTable *interfaces = NULL;
 	zend_class_entry *pce = NULL;
-	zval *pd = NULL;
 
 	switch (ZEND_NUM_ARGS()) {
 		case 1: if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "S", &name) != SUCCESS) {
@@ -323,15 +322,13 @@ PHP_METHOD(Definition, __construct)
 			return;
 		} break;
 
-		case 2: if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "SO", &name, &pd, php_componere_definition_ce) != SUCCESS &&
-			    zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "SH", &name, &interfaces) != SUCCESS &&
+		case 2: if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "SH", &name, &interfaces) != SUCCESS &&
 			    zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "SS", &name, &parent) != SUCCESS) {
 			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "name and interfaces, or name and parent expected");
 			return;
 		} break;
 
-		case 3: if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "SOH", &name, &pd, php_componere_definition_ce, &interfaces) != SUCCESS &&
-			    zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "SSH", &name, &parent, &interfaces) != SUCCESS) {
+		case 3: if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "SSH", &name, &parent, &interfaces) != SUCCESS) {
 			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "name, parent, and interfaces expected");
 			return;
 		} break;
@@ -347,14 +344,10 @@ PHP_METHOD(Definition, __construct)
 
 	zend_initialize_class_data(o->ce, 1);
 
-	if (pd) {
-		pce = php_componere_definition_fetch(pd)->ce;
+	if (!parent) {
+		pce = zend_lookup_class(name);
 	} else {
-		if (!parent) {
-			pce = zend_lookup_class(name);
-		} else {
-			pce = zend_lookup_class(parent);
-		}
+		pce = zend_lookup_class(parent);
 	}
 
 	if (pce && zend_string_equals_ci(o->ce->name, pce->name)) {
@@ -543,6 +536,34 @@ PHP_METHOD(Definition, addTrait)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_interface, 0, 0, 1)
+	ZEND_ARG_INFO(0, interface)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Definition, addInterface)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+	zend_class_entry *interface = NULL;
+
+	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "C", &interface) != SUCCESS) {
+		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "trait expected");
+		return;
+	}
+
+	if (o->registered) {
+		zend_throw_exception_ex(spl_ce_RuntimeException, 0, 
+			"%s is already registered, cannot add interface %s", 
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(interface->name));
+		return;
+	}
+
+	if (!instanceof_function(o->ce, interface)) {
+		zend_do_implement_interface(o->ce, interface);
+	}
+
+	RETURN_ZVAL(getThis(), 1, 0);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_property, 0, 0, 2)
 	ZEND_ARG_INFO(0, name)
 	ZEND_ARG_OBJ_INFO(0, property, Componere\\Value, 0)
@@ -658,7 +679,6 @@ PHP_METHOD(Definition, getClosure)
 }
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_closures, 0, 0, 0)
-	ZEND_ARG_INFO(0, scope)
 ZEND_END_ARG_INFO()
 
 PHP_METHOD(Definition, getClosures)
@@ -691,16 +711,16 @@ PHP_METHOD(Definition, getClosures)
 static zend_function_entry php_componere_definition_abstract_methods[] = {
 	PHP_ME(Definition, addMethod, php_componere_definition_method, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addTrait, php_componere_definition_trait, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addProperty, php_componere_definition_property, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
-
-	PHP_ME(Definition, getClosure, php_componere_definition_closure, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, getClosures, php_componere_definition_closures, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, addInterface, php_componere_definition_interface, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
 static zend_function_entry php_componere_definition_methods[] = {
 	PHP_ME(Definition, __construct, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, addProperty, php_componere_definition_property, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, addConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, getClosure, php_componere_definition_closure, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, getClosures, php_componere_definition_closures, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, register, php_componere_definition_register, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
