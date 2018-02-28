@@ -29,23 +29,14 @@
 #include <zend_exceptions.h>
 #include <zend_inheritance.h>
 
+#include "src/definition.h"
 #include "src/method.h"
 #include "src/value.h"
 
+zend_class_entry *php_componere_definition_abstract_ce;
 zend_class_entry *php_componere_definition_ce;
+
 zend_object_handlers php_componere_definition_handlers;
-
-typedef struct _php_componere_definition_t {
-	zend_class_entry *ce;
-	zend_class_entry *saved;
-	zend_bool registered;
-	zend_object std;
-} php_componere_definition_t;
-
-#define php_componere_definition_from(o) \
-	((php_componere_definition_t*) \
-		((char*) o - XtOffsetOf(php_componere_definition_t, std)))
-#define php_componere_definition_fetch(z) php_componere_definition_from(Z_OBJ_P(z))
 
 static inline zend_object* php_componere_definition_create(zend_class_entry *ce) {
 	php_componere_definition_t *o = 
@@ -186,7 +177,20 @@ static inline void php_componere_definition_magic(zend_class_entry *ce, zend_cla
 #undef php_componere_definition_magic_find
 }
 
-static inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
+inline void php_componere_definition_parent(zend_class_entry *ce, zend_class_entry *parent) {
+	zend_class_entry **pce = &ce->parent;
+
+	do {
+		if (!(*pce)) {
+			(*pce) = parent;
+			break;
+		}
+
+		pce = &(*pce)->parent;
+	} while ((*pce));
+}
+
+inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
 {
 	zend_class_entry* pair[2] = {ce, parent};
 
@@ -260,7 +264,7 @@ static inline void php_componere_definition_copy(zend_class_entry *ce, zend_clas
 
 	php_componere_definition_magic(ce, parent);
 
-	ce->ce_flags |= parent->ce_flags|ZEND_ACC_FINAL;
+	ce->ce_flags |= parent->ce_flags;
 	ce->parent = parent->parent;
 }
 
@@ -295,7 +299,7 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 		zend_string_release(name);
 	}
 
-	if (!o->registered || o->ce->refcount > 1) {
+	if (!o->registered || (o->ce && o->ce->refcount > 1)) {
 		ZVAL_PTR(&tmp, o->ce);
 
 		destroy_zend_class(&tmp);
@@ -328,8 +332,13 @@ PHP_METHOD(Definition, __construct)
 			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "name, parent, and interfaces expected");
 			return;
 		} break;
+
+		default: {
+			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "name, parent, and interfaces expected");
+			return;
+		}
 	}
-	
+
 	o->ce->type = ZEND_USER_CLASS;
 	o->ce->name = zend_string_copy(name);
 
@@ -367,6 +376,11 @@ PHP_METHOD(Definition, __construct)
 	} else if(pce) {
 		zend_do_inheritance(o->ce, pce);
 	}
+
+	if (pce) {
+		php_componere_definition_parent(o->ce, pce);
+	}
+
 	o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 
 	if (interfaces) {
@@ -392,7 +406,9 @@ PHP_METHOD(Definition, __construct)
 					break;
 				}
 
-				zend_do_implement_interface(o->ce, ce);
+				if (!instanceof_function(o->ce, ce)) {
+					zend_do_implement_interface(o->ce, ce);
+				}
 			}
 		} ZEND_HASH_FOREACH_END();
 
@@ -520,6 +536,34 @@ PHP_METHOD(Definition, addTrait)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_interface, 0, 0, 1)
+	ZEND_ARG_INFO(0, interface)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Definition, addInterface)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+	zend_class_entry *interface = NULL;
+
+	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "C", &interface) != SUCCESS) {
+		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "trait expected");
+		return;
+	}
+
+	if (o->registered) {
+		zend_throw_exception_ex(spl_ce_RuntimeException, 0, 
+			"%s is already registered, cannot add interface %s", 
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(interface->name));
+		return;
+	}
+
+	if (!instanceof_function(o->ce, interface)) {
+		zend_do_implement_interface(o->ce, interface);
+	}
+
+	RETURN_ZVAL(getThis(), 1, 0);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_property, 0, 0, 2)
 	ZEND_ARG_INFO(0, name)
 	ZEND_ARG_OBJ_INFO(0, property, Componere\\Value, 0)
@@ -635,7 +679,6 @@ PHP_METHOD(Definition, getClosure)
 }
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_closures, 0, 0, 0)
-	ZEND_ARG_INFO(0, scope)
 ZEND_END_ARG_INFO()
 
 PHP_METHOD(Definition, getClosures)
@@ -665,25 +708,35 @@ PHP_METHOD(Definition, getClosures)
 	} ZEND_HASH_FOREACH_END();
 }
 
-static zend_function_entry php_componere_definition_methods[] = {
-	PHP_ME(Definition, __construct, NULL, ZEND_ACC_PUBLIC)
+static zend_function_entry php_componere_definition_abstract_methods[] = {
 	PHP_ME(Definition, addMethod, php_componere_definition_method, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addTrait, php_componere_definition_trait, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addProperty, php_componere_definition_property, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, register, php_componere_definition_register, ZEND_ACC_PUBLIC)
-
-	PHP_ME(Definition, getClosure, php_componere_definition_closure, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, getClosures, php_componere_definition_closures, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, addInterface, php_componere_definition_interface, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
+static zend_function_entry php_componere_definition_methods[] = {
+	PHP_ME(Definition, __construct, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, addProperty, php_componere_definition_property, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, addConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, getClosure, php_componere_definition_closure, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, getClosures, php_componere_definition_closures, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, register, php_componere_definition_register, ZEND_ACC_PUBLIC)
+	PHP_FE_END
+};
+
+
 PHP_MINIT_FUNCTION(Componere_Definition) {
 	zend_class_entry ce;
-	
+
+	INIT_NS_CLASS_ENTRY(ce, "Componere\\Abstract", "Definition", php_componere_definition_abstract_methods);
+
+	php_componere_definition_abstract_ce = zend_register_internal_class(&ce);
+	php_componere_definition_abstract_ce->ce_flags |= ZEND_ACC_EXPLICIT_ABSTRACT_CLASS;
+
 	INIT_NS_CLASS_ENTRY(ce, "Componere", "Definition", php_componere_definition_methods);
 
-	php_componere_definition_ce = zend_register_internal_class(&ce);
+	php_componere_definition_ce = zend_register_internal_class_ex(&ce, php_componere_definition_abstract_ce);
 	php_componere_definition_ce->create_object = php_componere_definition_create;
 
 	memcpy(&php_componere_definition_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));

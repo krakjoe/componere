@@ -16,6 +16,6 @@ $b->addMethod("function", $m);
 --EXPECTF--
 Fatal error: Uncaught RuntimeException: method was already added to A in %s:11
 Stack trace:
-#0 %s(11): Componere\Definition->addMethod('function', Object(Componere\Method))
+#0 %s(11): Componere\Abstract\Definition->addMethod('function', Object(Componere\Method))
 #1 {main}
   thrown in %s on line 11
