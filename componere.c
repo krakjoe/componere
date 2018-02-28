@@ -24,6 +24,7 @@
 #include "php_componere.h"
 
 #include "src/definition.h"
+#include "src/patch.h"
 #include "src/method.h"
 #include "src/value.h"
 
@@ -47,6 +48,7 @@ static inline void php_componere_optimizer_adjust()
 PHP_MINIT_FUNCTION(componere)
 {
 	PHP_MINIT(Componere_Definition)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_MINIT(Componere_Patch)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_MINIT(Componere_Method)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_MINIT(Componere_Value)(INIT_FUNC_ARGS_PASSTHRU);
 

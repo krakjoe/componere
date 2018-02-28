@@ -2,18 +2,17 @@
 Definition::patch disallow internal class patch
 --FILE--
 <?php
-use Componere\Definition;
+use Componere\Patch;
 use Componere\Method;
 
 $instance = new DateTime();
 
-$a = new Definition(A::class, DateTime::class);
-
-$a->patch($instance);
+$a = new Patch($instance);
 ?>
 --EXPECTF--
-Fatal error: Uncaught RuntimeException: cannot patch internal objects in %s:9
+Fatal error: Uncaught RuntimeException: cannot patch internal objects in %s:7
 Stack trace:
-#0 %s(9): Componere\Definition->patch(Object(DateTime))
+#0 %s(7): Componere\Patch->__construct(Object(DateTime))
 #1 {main}
-  thrown in %s on line 9
+  thrown in %s on line 7
+

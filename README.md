@@ -11,26 +11,33 @@ API
 
 ```php
 namespace Componere {
-	class Definition {
+	namespace Abstract {
+		abstract class Definition {
+			public function addMethod(string $name, Method $method);
+			public function addTrait(string $name);
+			public function addProperty(string $name, Value $property);
+			public function addConstant(string $name, Value $constant);
+
+			public function getClosure(string $name) : Closure;
+			public function getClosures() : array;
+		}
+	}
+
+	class Definition extends Abstract\Definition {
 		public function __construct(string $name);
 		public function __construct(string $name, string $parent);
 		public function __construct(string $name, Definition $parent);
 		public function __construct(string $name, array $interfaces);
 		public function __construct(string $name, Definition $parent, array $interfaces);
 		public function __construct(string $name, string $parent, array $interfaces);
-
-		public function addMethod(string $name, Method $method);
-		public function addTrait(string $name);
-		public function addProperty(string $name, Value $property);
-		public function addConstant(string $name, Value $constant);
-
-		public function getClosure(string $name) : Closure;
-		public function getClosures() : array;
  
 		public function register();
+	}
+	class Patch extends Abstract\Definition {
+		public function __construct(object $instance);
 
-		/* here be dragons, possibly */
-		public function patch(Object $instance);
+		public function apply();
+		public function revert();
 	}
 	class Method {
 		public function __construct(string $name, Closure $method);
