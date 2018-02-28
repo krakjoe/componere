@@ -15,28 +15,32 @@
   | Author: krakjoe <krakjoe@php.net>                                    |
   +----------------------------------------------------------------------+
  */
-#ifndef HAVE_COMPONERE_DEFINITION_H
-#define HAVE_COMPONERE_DEFINITION_H
-extern zend_class_entry* php_componere_definition_abstract_ce;
+#ifndef HAVE_COMPONERE_COMMON_H
+#define HAVE_COMPONERE_COMMON_H
 
-extern PHP_MINIT_FUNCTION(Componere_Definition);
+#define php_componere_parse_parameters(s, ...) \
+	zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), s, ##__VA_ARGS__)
+#define php_componere_throw_ex(e, s, ...) \
+	zend_throw_exception_ex(spl_ce_##e, 0, s, ##__VA_ARGS__)
+#define php_componere_throw(s, ...) \
+	php_componere_throw_ex(RuntimeException, s, ##__VA_ARGS__)
+#define php_componere_wrong_parameters(s, ...) \
+	php_componere_throw_ex(InvalidArgumentException, s, ##__VA_ARGS__);
+#define php_componere_no_parameters() do { \
+	if (php_componere_parse_parameters("") != SUCCESS) { \
+		php_componere_wrong_parameters("no parameters expected"); \
+		return; \
+	} \
+} while(0)
 
-extern zend_object_handlers php_componere_definition_handlers;
+static inline void php_componere_destroy_class(zend_class_entry *ce) {
+	zval tmp;
 
-typedef struct _php_componere_definition_t {
-	zend_class_entry *ce;
-	zend_class_entry *saved;
-	zend_bool registered;
-	zval instance;
-	zend_object std;
-} php_componere_definition_t;
+	ZVAL_PTR(&tmp, ce);
 
-#define php_componere_definition_from(o) \
-	((php_componere_definition_t*) \
-		((char*) o - XtOffsetOf(php_componere_definition_t, std)))
-#define php_componere_definition_fetch(z) php_componere_definition_from(Z_OBJ_P(z))
+	destroy_zend_class(&tmp);
+}
 
-extern void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent);
-extern void php_componere_definition_parent(zend_class_entry *ce, zend_class_entry *parent);
-
+ZEND_BEGIN_ARG_INFO(php_componere_no_arginfo, 0)
+ZEND_END_ARG_INFO()
 #endif

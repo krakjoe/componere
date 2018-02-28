@@ -27,6 +27,7 @@
 #include <zend_exceptions.h>
 #include <ext/spl/spl_exceptions.h>
 
+#include "src/common.h"
 #include "src/value.h"
 
 zend_class_entry *php_componere_value_ce;
@@ -65,8 +66,8 @@ PHP_METHOD(Value, __construct)
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 	zval *value = NULL;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "z", &value) != SUCCESS) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "value expected");
+	if (php_componere_parse_parameters("z", &value) != SUCCESS) {
+		php_componere_wrong_parameters("value expected");
 		return;
 	}
 
@@ -81,7 +82,7 @@ PHP_METHOD(Value, __construct)
 		break;
 		
 		default:
-			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0,
+			php_componere_wrong_parameters(
 				"values of type %s cannot be declared with default values",
 				Z_TYPE_P(value) == IS_OBJECT ?
 					ZSTR_VAL(Z_OBJCE_P(value)->name) :
@@ -91,21 +92,14 @@ PHP_METHOD(Value, __construct)
 	o->access = ZEND_ACC_PUBLIC;
 }
 
-ZEND_BEGIN_ARG_INFO(php_componere_value_protected, 0)
-ZEND_END_ARG_INFO()
-
 PHP_METHOD(Value, setProtected)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "") != SUCCESS) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "no arguments expected");
-		return;
-	}
+	php_componere_no_parameters();
 
 	if ((o->access & ZEND_ACC_PPP_MASK) > ZEND_ACC_PUBLIC) {
-		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
-			"access level already set");
+		php_componere_throw_ex(RuntimeException, "access level already set");
 		return;
 	}
 
@@ -114,21 +108,14 @@ PHP_METHOD(Value, setProtected)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO(php_componere_value_private, 0)
-ZEND_END_ARG_INFO()
-
 PHP_METHOD(Value, setPrivate)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "") != SUCCESS) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "no arguments expected");
-		return;
-	}
+	php_componere_no_parameters();
 
 	if ((o->access & ZEND_ACC_PPP_MASK) > ZEND_ACC_PUBLIC) {
-		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
-			"access level already set");
+		php_componere_throw_ex(RuntimeException, "access level already set");
 		return;
 	}
 
@@ -137,10 +124,22 @@ PHP_METHOD(Value, setPrivate)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Value, setStatic)
+{
+	php_componere_value_t *o = php_componere_value_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	o->access |= ZEND_ACC_STATIC;
+
+	RETURN_ZVAL(getThis(), 1, 0);
+}
+
 static zend_function_entry php_componere_value_methods[] = {
 	PHP_ME(Value, __construct, php_componere_value_construct, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, setProtected, php_componere_value_protected, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, setPrivate, php_componere_value_private, ZEND_ACC_PUBLIC)
+	PHP_ME(Value, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Value, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Value, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 

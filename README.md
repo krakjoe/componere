@@ -36,6 +36,7 @@ namespace Componere {
 		public function getClosures() : array;
 
 		public function register();
+		public function isRegistered();
 	}
 	class Patch extends Abstract\Definition {
 		public function __construct(object $instance);
@@ -46,16 +47,21 @@ namespace Componere {
 
 		public function apply();
 		public function revert();
+		public function isApplied();
 	}
 	class Method {
 		public function __construct(string $name, Closure $method);
+
 		public function setProtected();
 		public function setPrivate();
+		public function setStatic();
 	}
 	class Value {
 		public function __construct(string $name, $value);
+
 		public function setProtected();
 		public function setPrivate();
+		public function setStatic();
 	}
 }
 ```

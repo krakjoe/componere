@@ -1,5 +1,5 @@
 --TEST--
-getClosures
+Definition::getClosures
 --FILE--
 <?php
 use Componere\Definition;
