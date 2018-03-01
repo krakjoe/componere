@@ -62,7 +62,7 @@ namespace Componere {
 		public function setStatic() : Method;
 	}
 	final class Value {
-		public function __construct(string $name, $value);
+		public function __construct($value);
 
 		public function setProtected() : Value;
 		public function setPrivate() : Value;
