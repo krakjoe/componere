@@ -16,7 +16,8 @@ API
   * InvalidArgumentException is thrown when a method or constructor is called incorrectly
   * RuntimeException is thrown when the call was invalid because of the environment that made it
   * When a method returns the parent type, it is suitable for chaining
-  * All classes are final
+  * All classes are final, and do not support properties
+  * Only Componere\Method supports cloning
 
 ```php
 namespace Componere {
