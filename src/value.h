@@ -32,6 +32,7 @@ typedef struct _php_componere_value_t {
 #define php_componere_value_access(z) (php_componere_value_fetch(z)->access)
 
 extern PHP_MINIT_FUNCTION(Componere_Value);
+extern PHP_RINIT_FUNCTION(Componere_Value);
 
 extern zend_class_entry *php_componere_value_ce;
 

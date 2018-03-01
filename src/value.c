@@ -27,6 +27,7 @@
 #include <zend_exceptions.h>
 #include <ext/spl/spl_exceptions.h>
 
+#include "src/common.h"
 #include "src/value.h"
 
 zend_class_entry *php_componere_value_ce;
@@ -39,11 +40,23 @@ static inline zend_object* php_componere_value_create(zend_class_entry *ce) {
 
 	zend_object_std_init(&o->std, ce);
 
-	object_properties_init(&o->std, ce);
-
 	o->std.handlers = &php_componere_value_handlers;
 
 	return &o->std;
+}
+
+static inline HashTable* php_componere_value_collect(zval *object, zval **table, int *num) {
+	zval *value = php_componere_value_default(object);
+
+	if (Z_TYPE_P(value) != IS_NULL) {
+		*table = value;
+		*num = 1;
+	} else {
+		*table = NULL;
+		*num = 0;
+	}
+	
+	return NULL;
 }
 
 static inline void php_componere_value_destroy(zend_object *zo) {
@@ -65,8 +78,8 @@ PHP_METHOD(Value, __construct)
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 	zval *value = NULL;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "z", &value) != SUCCESS) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "value expected");
+	if (php_componere_parse_parameters("z", &value) != SUCCESS) {
+		php_componere_wrong_parameters("value expected");
 		return;
 	}
 
@@ -81,31 +94,22 @@ PHP_METHOD(Value, __construct)
 		break;
 		
 		default:
-			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0,
+			php_componere_wrong_parameters(
 				"values of type %s cannot be declared with default values",
-				Z_TYPE_P(value) == IS_OBJECT ?
-					ZSTR_VAL(Z_OBJCE_P(value)->name) :
-					zend_get_type_by_const(Z_TYPE_P(value)));
+				zend_get_type_by_const(Z_TYPE_P(value)));
 	}
 
 	o->access = ZEND_ACC_PUBLIC;
 }
 
-ZEND_BEGIN_ARG_INFO(php_componere_value_protected, 0)
-ZEND_END_ARG_INFO()
-
 PHP_METHOD(Value, setProtected)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "") != SUCCESS) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "no arguments expected");
-		return;
-	}
+	php_componere_no_parameters();
 
 	if ((o->access & ZEND_ACC_PPP_MASK) > ZEND_ACC_PUBLIC) {
-		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
-			"access level already set");
+		php_componere_throw_ex(RuntimeException, "access level already set");
 		return;
 	}
 
@@ -114,21 +118,14 @@ PHP_METHOD(Value, setProtected)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO(php_componere_value_private, 0)
-ZEND_END_ARG_INFO()
-
 PHP_METHOD(Value, setPrivate)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "") != SUCCESS) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "no arguments expected");
-		return;
-	}
+	php_componere_no_parameters();
 
 	if ((o->access & ZEND_ACC_PPP_MASK) > ZEND_ACC_PUBLIC) {
-		zend_throw_exception_ex(spl_ce_RuntimeException, 0,
-			"access level already set");
+		php_componere_throw_ex(RuntimeException, "access level already set");
 		return;
 	}
 
@@ -137,10 +134,22 @@ PHP_METHOD(Value, setPrivate)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Value, setStatic)
+{
+	php_componere_value_t *o = php_componere_value_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	o->access |= ZEND_ACC_STATIC;
+
+	RETURN_ZVAL(getThis(), 1, 0);
+}
+
 static zend_function_entry php_componere_value_methods[] = {
 	PHP_ME(Value, __construct, php_componere_value_construct, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, setProtected, php_componere_value_protected, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, setPrivate, php_componere_value_private, ZEND_ACC_PUBLIC)
+	PHP_ME(Value, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Value, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Value, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
@@ -152,10 +161,19 @@ PHP_MINIT_FUNCTION(Componere_Value) {
 	php_componere_value_ce = zend_register_internal_class(&ce);
 	php_componere_value_ce->create_object = php_componere_value_create;
 
-	memcpy(&php_componere_value_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	php_componere_setup_handlers(
+		&php_componere_value_handlers, 
+		php_componere_deny_debug,
+		php_componere_value_collect,
+		php_componere_deny_clone,
+		php_componere_value_destroy, 
+		XtOffsetOf(php_componere_value_t, std));
 
-	php_componere_value_handlers.offset = XtOffsetOf(php_componere_value_t, std);
-	php_componere_value_handlers.free_obj = php_componere_value_destroy;
+	return SUCCESS;
+}
+
+PHP_RINIT_FUNCTION(Componere_Value) {
+	php_componere_value_ce->ce_flags |= ZEND_ACC_FINAL;
 
 	return SUCCESS;
 }

@@ -20,8 +20,7 @@
 extern zend_class_entry* php_componere_definition_abstract_ce;
 
 extern PHP_MINIT_FUNCTION(Componere_Definition);
-
-extern zend_object_handlers php_componere_definition_handlers;
+extern PHP_RINIT_FUNCTION(Componere_Definition);
 
 typedef struct _php_componere_definition_t {
 	zend_class_entry *ce;
@@ -38,4 +37,5 @@ typedef struct _php_componere_definition_t {
 
 extern void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent);
 extern void php_componere_definition_parent(zend_class_entry *ce, zend_class_entry *parent);
+
 #endif

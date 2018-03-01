@@ -29,6 +29,7 @@
 #include <zend_exceptions.h>
 #include <zend_inheritance.h>
 
+#include "src/common.h"
 #include "src/definition.h"
 
 zend_class_entry *php_componere_definition_patch_ce;
@@ -41,8 +42,6 @@ static inline zend_object* php_componere_definition_patch_create(zend_class_entr
 
 	zend_object_std_init(&o->std, ce);
 
-	object_properties_init(&o->std, ce);
-
 	o->ce = (zend_class_entry*) 
 		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
 
@@ -51,14 +50,25 @@ static inline zend_object* php_componere_definition_patch_create(zend_class_entr
 	return &o->std;
 }
 
-static inline void php_componere_definition_patch_destroy(zend_object *zo) {
-	php_componere_definition_t *o = php_componere_definition_from(zo);
-	zval tmp;
+static inline HashTable* php_componere_definition_patch_collect(zval *object, zval **table, int *num) {
+	php_componere_definition_t *o = php_componere_definition_fetch(object);
 
 	if (!Z_ISUNDEF(o->instance)) {
-		ZVAL_PTR(&tmp, o->ce);
+		*table = &o->instance;
+		*num = 1;
+	} else {
+		*table = NULL;
+		*num = 0;
+	}
+	
+	return NULL;
+}
 
-		destroy_zend_class(&tmp);
+static inline void php_componere_definition_patch_destroy(zend_object *zo) {
+	php_componere_definition_t *o = php_componere_definition_from(zo);
+
+	if (!Z_ISUNDEF(o->instance)) {
+		php_componere_destroy_class(o->ce);
 
 		Z_OBJCE(o->instance) = o->saved;
 
@@ -76,23 +86,23 @@ PHP_METHOD(Patch, __construct)
 	HashTable *interfaces = NULL;
 
 	switch (ZEND_NUM_ARGS()) {
-		case 2: if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "oH", &pd, &interfaces) != SUCCESS) {
-			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "instance and interfaces expected");
+		case 2: if (php_componere_parse_parameters("oH", &pd, &interfaces) != SUCCESS) {
+			php_componere_wrong_parameters("instance and interfaces expected");
 			return;
 		} break;
 
-		case 1: if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "o", &pd) != SUCCESS) {
-			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, " instance expected as single argument");
+		case 1: if (php_componere_parse_parameters("o", &pd) != SUCCESS) {
+			php_componere_wrong_parameters("instance expected as single argument");
 			return;
 		} break;
 
 		default:
-			zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0, "instance, or instance and interfaces expected");
+			php_componere_wrong_parameters("instance, or instance and interfaces expected");
 			return;
 	}
 
 	if (Z_OBJCE_P(pd)->type != ZEND_USER_CLASS) {
-		zend_throw_exception_ex(spl_ce_RuntimeException, 0, "cannot patch internal objects");
+		php_componere_throw_ex(InvalidArgumentException, "cannot patch internal objects");
 		return;
 	}
 
@@ -121,14 +131,14 @@ PHP_METHOD(Patch, __construct)
 				ce = zend_lookup_class(Z_STR_P(interface));
 
 				if (!ce) {
-					zend_throw_exception_ex(spl_ce_RuntimeException, 0, 
+					php_componere_throw(
 						"could not find interface %s", 
 						Z_STRVAL_P(interface));
 					break;
 				}
 
 				if ((ce->ce_flags & ZEND_ACC_INTERFACE) != ZEND_ACC_INTERFACE) {
-					zend_throw_exception_ex(spl_ce_RuntimeException, 0, 
+					php_componere_throw_ex(InvalidArgumentException,
 						"%s is not an interface", 
 						Z_STRVAL_P(interface));
 					break;
@@ -144,17 +154,12 @@ PHP_METHOD(Patch, __construct)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_patch_no_arginfo, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
 PHP_METHOD(Patch, apply)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_object *zo;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "") != SUCCESS) {
-		return;
-	}
+	php_componere_no_parameters();
 
 	zo = Z_OBJ(o->instance);
 	zo->ce = o->ce;
@@ -165,9 +170,7 @@ PHP_METHOD(Patch, revert)
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_object *zo;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "") != SUCCESS) {
-		return;
-	}
+	php_componere_no_parameters();
 
 	zo = Z_OBJ(o->instance);
 	zo->ce = o->saved;
@@ -184,7 +187,8 @@ PHP_METHOD(Patch, getClosure)
 	zend_string *key = NULL;
 	zend_function *function = NULL;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "S", &name) != SUCCESS) {
+	if (php_componere_parse_parameters("S", &name) != SUCCESS) {
+		php_componere_wrong_parameters("name expected");		
 		return;
 	}
 
@@ -192,25 +196,21 @@ PHP_METHOD(Patch, getClosure)
 	function = zend_hash_find_ptr(&o->ce->function_table, key);
 
 	if (!function) {
-		zend_throw_exception_ex(spl_ce_InvalidArgumentException, 0,
-			"could not find %s::%s", ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+		php_componere_throw(
+			"could not find %s::%s", 
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
 	} else {
 		zend_create_closure(return_value, function, o->ce, o->ce, &o->instance);
 	}
 	zend_string_release(key);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_patch_closures, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
 PHP_METHOD(Patch, getClosures)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_function *function = NULL;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "") != SUCCESS) {
-		return;
-	}
+	php_componere_no_parameters();
 
 	array_init(return_value);
 
@@ -224,12 +224,22 @@ PHP_METHOD(Patch, getClosures)
 	} ZEND_HASH_FOREACH_END();
 }
 
+PHP_METHOD(Patch, isApplied)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	RETURN_BOOL(Z_OBJCE(o->instance) == o->ce);
+}
+
 static zend_function_entry php_componere_definition_patch_methods[] = {
 	PHP_ME(Patch, __construct, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, getClosure, php_componere_definition_patch_closure, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, getClosures, php_componere_definition_patch_closures, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, apply, php_componere_definition_patch_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, revert, php_componere_definition_patch_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, getClosures, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, apply, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, revert, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, isApplied, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
@@ -241,9 +251,19 @@ PHP_MINIT_FUNCTION(Componere_Patch) {
 	php_componere_definition_patch_ce = zend_register_internal_class_ex(&ce, php_componere_definition_abstract_ce);
 	php_componere_definition_patch_ce->create_object = php_componere_definition_patch_create;
 
-	memcpy(&php_componere_definition_patch_handlers, &php_componere_definition_handlers, sizeof(zend_object_handlers));
+	php_componere_setup_handlers(
+		&php_componere_definition_patch_handlers, 
+		php_componere_deny_debug,
+		php_componere_definition_patch_collect,
+		php_componere_deny_clone,
+		php_componere_definition_patch_destroy, 
+		XtOffsetOf(php_componere_definition_t, std));
 
-	php_componere_definition_patch_handlers.free_obj = php_componere_definition_patch_destroy;
+	return SUCCESS;
+}
+
+PHP_RINIT_FUNCTION(Componere_Patch) {
+	php_componere_definition_patch_ce->ce_flags |= ZEND_ACC_FINAL;
 
 	return SUCCESS;
 }

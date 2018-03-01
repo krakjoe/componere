@@ -30,6 +30,7 @@ typedef struct _php_componere_method_t {
 #define php_componere_method_function(z) (php_componere_method_fetch(z)->function)
 
 extern PHP_MINIT_FUNCTION(Componere_Method);
+extern PHP_RINIT_FUNCTION(Componere_Method);
 
 extern zend_class_entry *php_componere_method_ce;
 

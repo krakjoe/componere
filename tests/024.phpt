@@ -11,7 +11,7 @@ $a->addProperty("name", new Value(0));
 $a->addProperty("name", new Value(0));
 ?>
 --EXPECTF--
-Fatal error: Uncaught InvalidArgumentException: cannot redeclare A::$name in %s:8
+Fatal error: Uncaught RuntimeException: cannot redeclare A::$name in %s:8
 Stack trace:
 #0 %s(8): Componere\Definition->addProperty('name', Object(Componere\Value))
 #1 {main}
