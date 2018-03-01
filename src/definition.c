@@ -49,6 +49,8 @@ static inline zend_object* php_componere_definition_create(zend_class_entry *ce)
 	o->ce = (zend_class_entry*) 
 		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
 
+	memset(o->ce, 0, sizeof(zend_class_entry));
+
 	o->std.handlers = &php_componere_definition_handlers;
 
 	return &o->std;
@@ -299,7 +301,7 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 		zend_string_release(name);
 	}
 
-	if (!o->registered || (o->ce && o->ce->refcount > 1)) {
+	if (o->ce->name && (!o->registered || o->ce->refcount > 1)) {
 		php_componere_destroy_class(o->ce);
 	}
 

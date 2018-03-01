@@ -6,11 +6,13 @@ use Componere\Definition;
 use Componere\Value;
 
 $v = new Value(
-	sprintf("hello world %s", __FILE__));
+	$s = sprintf("hello world %s", __FILE__));
 
 $e = new Definition(E::class);
 $e->addProperty("property", $v);
 $e->register();
+
+unset($s);
 
 var_dump(new E());
 ?>
