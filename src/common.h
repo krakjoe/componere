@@ -47,7 +47,7 @@ static inline void php_componere_destroy_class(zend_class_entry *ce) {
 
 static inline zend_object* php_componere_deny_clone(zval *object) {
 	php_componere_deny_throw(object, cloning);
-	GC_ADDREF(Z_OBJ_P(object));
+	Z_ADDREF_P(object);
 	return Z_OBJ_P(object);
 }
 
