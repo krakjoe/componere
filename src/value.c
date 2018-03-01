@@ -84,9 +84,7 @@ PHP_METHOD(Value, __construct)
 		default:
 			php_componere_wrong_parameters(
 				"values of type %s cannot be declared with default values",
-				Z_TYPE_P(value) == IS_OBJECT ?
-					ZSTR_VAL(Z_OBJCE_P(value)->name) :
-					zend_get_type_by_const(Z_TYPE_P(value)));
+				zend_get_type_by_const(Z_TYPE_P(value)));
 	}
 
 	o->access = ZEND_ACC_PUBLIC;

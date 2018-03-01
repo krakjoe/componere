@@ -58,7 +58,7 @@ static inline void php_componere_method_destroy(zend_object *zo) {
 }
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_method_construct, 0, 0, 1)
-	ZEND_ARG_OBJ_INFO(0, closure, Closure, 0)
+	ZEND_ARG_INFO(0, closure)
 ZEND_END_ARG_INFO()
 
 PHP_METHOD(Method, __construct)

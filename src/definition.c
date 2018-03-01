@@ -434,7 +434,7 @@ PHP_METHOD(Definition, register)
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_method, 0, 0, 2)
 	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_OBJ_INFO(0, method, Componere\\Method, 0)
+	ZEND_ARG_INFO(0, method)
 ZEND_END_ARG_INFO()
 
 PHP_METHOD(Definition, addMethod)
@@ -541,7 +541,7 @@ PHP_METHOD(Definition, addInterface)
 	zend_class_entry *interface = NULL;
 
 	if (php_componere_parse_parameters("C", &interface) != SUCCESS) {
-		php_componere_wrong_parameters("trait expected");
+		php_componere_wrong_parameters("interface expected");
 		return;
 	}
 
@@ -561,7 +561,7 @@ PHP_METHOD(Definition, addInterface)
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_property, 0, 0, 2)
 	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_OBJ_INFO(0, property, Componere\\Value, 0)
+	ZEND_ARG_INFO(0, value)
 ZEND_END_ARG_INFO()
 
 PHP_METHOD(Definition, addProperty)
@@ -599,7 +599,7 @@ PHP_METHOD(Definition, addProperty)
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_constant, 0, 0, 2)
 	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_OBJ_INFO(0, property, Componere\\Value, 0)
+	ZEND_ARG_INFO(0, property)
 ZEND_END_ARG_INFO()
 
 PHP_METHOD(Definition, addConstant)

@@ -80,7 +80,7 @@ PHP_METHOD(Patch, __construct)
 		} break;
 
 		case 1: if (php_componere_parse_parameters("o", &pd) != SUCCESS) {
-			php_componere_wrong_parameters(" instance expected as single argument");
+			php_componere_wrong_parameters("instance expected as single argument");
 			return;
 		} break;
 
@@ -142,9 +142,6 @@ PHP_METHOD(Patch, __construct)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_patch_no_arginfo, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
 PHP_METHOD(Patch, apply)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
@@ -196,9 +193,6 @@ PHP_METHOD(Patch, getClosure)
 	zend_string_release(key);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_patch_closures, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
 PHP_METHOD(Patch, getClosures)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
@@ -218,9 +212,6 @@ PHP_METHOD(Patch, getClosures)
 	} ZEND_HASH_FOREACH_END();
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_patch_detect, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
 PHP_METHOD(Patch, isApplied)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
@@ -233,10 +224,10 @@ PHP_METHOD(Patch, isApplied)
 static zend_function_entry php_componere_definition_patch_methods[] = {
 	PHP_ME(Patch, __construct, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, getClosure, php_componere_definition_patch_closure, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, getClosures, php_componere_definition_patch_closures, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, apply, php_componere_definition_patch_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, revert, php_componere_definition_patch_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, isApplied, php_componere_definition_patch_detect, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, getClosures, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, apply, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, revert, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, isApplied, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
