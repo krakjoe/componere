@@ -40,11 +40,23 @@ static inline zend_object* php_componere_value_create(zend_class_entry *ce) {
 
 	zend_object_std_init(&o->std, ce);
 
-	object_properties_init(&o->std, ce);
-
 	o->std.handlers = &php_componere_value_handlers;
 
 	return &o->std;
+}
+
+static inline HashTable* php_componere_value_collect(zval *object, zval **table, int *num) {
+	zval *value = php_componere_value_default(object);
+
+	if (Z_TYPE_P(value) != IS_NULL) {
+		*table = value;
+		*num = 1;
+	} else {
+		*table = NULL;
+		*num = 0;
+	}
+	
+	return NULL;
 }
 
 static inline void php_componere_value_destroy(zend_object *zo) {
@@ -149,10 +161,13 @@ PHP_MINIT_FUNCTION(Componere_Value) {
 	php_componere_value_ce = zend_register_internal_class(&ce);
 	php_componere_value_ce->create_object = php_componere_value_create;
 
-	memcpy(&php_componere_value_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-
-	php_componere_value_handlers.offset = XtOffsetOf(php_componere_value_t, std);
-	php_componere_value_handlers.free_obj = php_componere_value_destroy;
+	php_componere_setup_handlers(
+		&php_componere_value_handlers, 
+		php_componere_deny_debug,
+		php_componere_value_collect,
+		php_componere_deny_clone,
+		php_componere_value_destroy, 
+		XtOffsetOf(php_componere_value_t, std));
 
 	return SUCCESS;
 }

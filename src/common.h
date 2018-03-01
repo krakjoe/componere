@@ -41,6 +41,86 @@ static inline void php_componere_destroy_class(zend_class_entry *ce) {
 	destroy_zend_class(&tmp);
 }
 
+#define php_componere_deny_throw(o, r) do { \
+	php_componere_throw("objects of type %s do not support " #r, ZSTR_VAL(Z_OBJCE_P((o))->name)); \
+} while(0)
+
+static inline zend_object* php_componere_deny_clone(zval *object) {
+	php_componere_deny_throw(object, cloning);
+	GC_REFCOUNT(Z_OBJ_P(object));
+	return Z_OBJ_P(object);
+}
+
+static inline void php_componere_deny_write(zval *object, zval *member) {
+	php_componere_deny_throw(object, properties);
+}
+
+static inline zval* php_componere_deny_ptr(zval *object) {
+	php_componere_deny_throw(object, properties);
+	return NULL;
+}
+
+static inline zval* php_componere_deny_read(zval *object, zval *member) {
+	php_componere_deny_throw(object, properties);
+	return &EG(uninitialized_zval);
+}
+
+static inline int php_componere_deny_isset(zval *object, zval *member, int has_set_exists) {
+	if (has_set_exists != 2) {
+		php_componere_deny_throw(object, properties);
+	}
+	return 0;
+}
+
+static inline void php_componere_deny_unset(zval *object, zval *member) {
+	php_componere_deny_throw(object, properties);
+}
+
+static inline HashTable* php_componere_deny_debug(zval *object, int *temp) {
+	HashTable *table;
+
+	ALLOC_HASHTABLE(table);
+
+	zend_hash_init(table, 8, ZVAL_PTR_DTOR, NULL, 0);
+
+	*temp = 1;
+
+	return table;
+}
+
+static inline HashTable* php_componere_deny_collect(zval *object, zval **table, int *num) {
+	*table = NULL;
+	*num   = 0;
+
+	return NULL;
+}
+
+#undef php_componere_deny_throw
+
+static inline void php_componere_setup_handlers(
+		zend_object_handlers *handlers, 
+		zend_object_get_debug_info_t debug_obj, 
+		zend_object_get_gc_t collect_obj,
+		zend_object_clone_obj_t clone_obj, 
+		zend_object_free_obj_t free_obj, 
+		zend_long offset) {
+	memcpy(handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+
+	handlers->read_property = (zend_object_read_property_t) php_componere_deny_read;
+	handlers->write_property = (zend_object_write_property_t) php_componere_deny_write;
+	handlers->read_dimension = (zend_object_read_dimension_t) php_componere_deny_read;
+	handlers->write_dimension = (zend_object_write_dimension_t) php_componere_deny_write;
+	handlers->get_property_ptr_ptr = (zend_object_get_property_ptr_ptr_t) php_componere_deny_ptr;
+	handlers->has_property = (zend_object_has_property_t) php_componere_deny_isset;
+	handlers->unset_property = (zend_object_unset_property_t) php_componere_deny_unset;
+
+	handlers->free_obj = free_obj;
+	handlers->get_debug_info = debug_obj;
+	handlers->get_gc = collect_obj;
+	handlers->clone_obj = clone_obj;
+	handlers->offset = offset;
+}
+
 ZEND_BEGIN_ARG_INFO(php_componere_no_arginfo, 0)
 ZEND_END_ARG_INFO()
 #endif

@@ -46,8 +46,6 @@ static inline zend_object* php_componere_definition_create(zend_class_entry *ce)
 
 	zend_object_std_init(&o->std, ce);
 
-	object_properties_init(&o->std, ce);
-
 	o->ce = (zend_class_entry*) 
 		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
 
@@ -744,10 +742,13 @@ PHP_MINIT_FUNCTION(Componere_Definition) {
 	php_componere_definition_ce = zend_register_internal_class_ex(&ce, php_componere_definition_abstract_ce);
 	php_componere_definition_ce->create_object = php_componere_definition_create;
 
-	memcpy(&php_componere_definition_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-
-	php_componere_definition_handlers.offset = XtOffsetOf(php_componere_definition_t, std);
-	php_componere_definition_handlers.free_obj = php_componere_definition_destroy;
+	php_componere_setup_handlers(
+		&php_componere_definition_handlers,
+		php_componere_deny_debug, 
+		php_componere_deny_collect,
+		php_componere_deny_clone,
+		php_componere_definition_destroy, 
+		XtOffsetOf(php_componere_definition_t, std));
 
 	return SUCCESS;
 }

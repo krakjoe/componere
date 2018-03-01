@@ -40,10 +40,31 @@ static inline zend_object* php_componere_method_create(zend_class_entry *ce) {
 
 	zend_object_std_init(&o->std, ce);
 
-	object_properties_init(&o->std, ce);
-
 	o->std.handlers = &php_componere_method_handlers;
 
+	return &o->std;
+}
+
+static inline zend_object* php_componere_method_clone(zval *object) {
+	php_componere_method_t *o = 
+		(php_componere_method_t*)
+			ecalloc(1, sizeof(php_componere_method_t));
+
+	zend_object_std_init(&o->std, Z_OBJCE_P(object));
+
+	o->function = (zend_function*) 
+		zend_arena_alloc(&CG(arena), sizeof(zend_op_array));
+	
+	memcpy(o->function, 
+		php_componere_method_function(object), sizeof(zend_op_array));
+
+	o->function->common.scope = NULL;
+	o->function->common.fn_flags &= ~ ZEND_ACC_CLOSURE;
+
+	function_add_ref(o->function);
+
+	o->std.handlers = &php_componere_method_handlers;
+	
 	return &o->std;
 }
 
@@ -142,10 +163,13 @@ PHP_MINIT_FUNCTION(Componere_Method) {
 	php_componere_method_ce = zend_register_internal_class(&ce);
 	php_componere_method_ce->create_object = php_componere_method_create;
 
-	memcpy(&php_componere_method_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-
-	php_componere_method_handlers.offset = XtOffsetOf(php_componere_method_t, std);
-	php_componere_method_handlers.free_obj = php_componere_method_destroy;
+	php_componere_setup_handlers(
+		&php_componere_method_handlers,
+		php_componere_deny_debug,
+		php_componere_deny_collect,
+		php_componere_method_clone, 
+		php_componere_method_destroy, 
+		XtOffsetOf(php_componere_method_t, std));
 
 	return SUCCESS;
 }
