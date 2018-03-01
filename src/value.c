@@ -157,4 +157,10 @@ PHP_MINIT_FUNCTION(Componere_Value) {
 	return SUCCESS;
 }
 
+PHP_RINIT_FUNCTION(Componere_Value) {
+	php_componere_value_ce->ce_flags |= ZEND_ACC_FINAL;
+
+	return SUCCESS;
+}
+
 #endif

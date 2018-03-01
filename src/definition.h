@@ -20,6 +20,7 @@
 extern zend_class_entry* php_componere_definition_abstract_ce;
 
 extern PHP_MINIT_FUNCTION(Componere_Definition);
+extern PHP_RINIT_FUNCTION(Componere_Definition);
 
 extern zend_object_handlers php_componere_definition_handlers;
 

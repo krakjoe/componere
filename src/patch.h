@@ -19,4 +19,5 @@
 #define HAVE_COMPONERE_PATCH_H
 
 extern PHP_MINIT_FUNCTION(Componere_Patch);
+extern PHP_RINIT_FUNCTION(Componere_Patch);
 #endif

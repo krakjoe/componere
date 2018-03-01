@@ -65,6 +65,11 @@ PHP_RINIT_FUNCTION(componere)
 
 	php_componere_optimizer_adjust();
 
+	PHP_RINIT(Componere_Definition)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_RINIT(Componere_Patch)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_RINIT(Componere_Method)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_RINIT(Componere_Value)(INIT_FUNC_ARGS_PASSTHRU);
+
 	return SUCCESS;
 }
 /* }}} */

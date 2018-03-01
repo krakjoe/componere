@@ -13,32 +13,37 @@ All of this is done using dark scary magic, but of the kind you might take to pr
 API
 ===
 
+  * InvalidArgumentException is thrown when a method or constructor is called incorrectly
+  * RuntimeException is thrown when the call was invalid because of the environment that made it
+  * When a method returns the parent type, it is suitable for chaining
+  * All classes are final
+
 ```php
 namespace Componere {
 	namespace Abstract {
-		abstract class Definition {
-			public function addTrait(string $name);
-			public function addInterface(string $name);
-			public function addMethod(string $name, Method $method);
+		final abstract class Definition {
+			public function addTrait(string $name) : Definition;
+			public function addInterface(string $name) : Definition;
+			public function addMethod(string $name, Method $method) : Definition;
 		}
 	}
 
-	class Definition extends Abstract\Definition {
+	final class Definition extends Abstract\Definition {
 		public function __construct(string $name);
 		public function __construct(string $name, string $parent);
 		public function __construct(string $name, array $interfaces);
 		public function __construct(string $name, string $parent, array $interfaces);
 
-		public function addProperty(string $name, Value $property);
-		public function addConstant(string $name, Value $constant); 
+		public function addProperty(string $name, Value $property) : Definition;
+		public function addConstant(string $name, Value $constant) : Definition; 
 
 		public function getClosure(string $name) : Closure;
 		public function getClosures() : array;
 
 		public function register();
-		public function isRegistered();
+		public function isRegistered() : bool;
 	}
-	class Patch extends Abstract\Definition {
+	final class Patch extends Abstract\Definition {
 		public function __construct(object $instance);
 		public function __construct(object $instance, array $interfaces);
 
@@ -47,21 +52,21 @@ namespace Componere {
 
 		public function apply();
 		public function revert();
-		public function isApplied();
+		public function isApplied() : bool;
 	}
-	class Method {
+	final class Method {
 		public function __construct(string $name, Closure $method);
 
-		public function setProtected();
-		public function setPrivate();
-		public function setStatic();
+		public function setProtected() : Method;
+		public function setPrivate() : Method;
+		public function setStatic() : Method;
 	}
-	class Value {
+	final class Value {
 		public function __construct(string $name, $value);
 
-		public function setProtected();
-		public function setPrivate();
-		public function setStatic();
+		public function setProtected() : Value;
+		public function setPrivate() : Value;
+		public function setStatic() : Value;
 	}
 }
 ```

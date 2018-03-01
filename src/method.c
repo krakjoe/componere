@@ -150,4 +150,10 @@ PHP_MINIT_FUNCTION(Componere_Method) {
 	return SUCCESS;
 }
 
+PHP_RINIT_FUNCTION(Componere_Method) {
+	php_componere_method_ce->ce_flags |= ZEND_ACC_FINAL;
+
+	return SUCCESS;
+}
+
 #endif

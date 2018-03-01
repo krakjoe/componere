@@ -750,4 +750,10 @@ PHP_MINIT_FUNCTION(Componere_Definition) {
 	return SUCCESS;
 }
 
+PHP_RINIT_FUNCTION(Componere_Definition) {
+	php_componere_definition_abstract_ce->ce_flags |= ZEND_ACC_FINAL;
+	php_componere_definition_ce->ce_flags |= ZEND_ACC_FINAL;
+
+	return SUCCESS;
+}
 #endif

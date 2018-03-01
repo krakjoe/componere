@@ -246,4 +246,10 @@ PHP_MINIT_FUNCTION(Componere_Patch) {
 	return SUCCESS;
 }
 
+PHP_RINIT_FUNCTION(Componere_Patch) {
+	php_componere_definition_patch_ce->ce_flags |= ZEND_ACC_FINAL;
+
+	return SUCCESS;
+}
+
 #endif
