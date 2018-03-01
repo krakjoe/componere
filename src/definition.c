@@ -171,10 +171,12 @@ static inline void php_componere_definition_magic(zend_class_entry *ce, zend_cla
 		ce->__tostring = php_componere_definition_magic_find(ce, "__tostring");
 	if (parent->__debugInfo)
 		ce->__debugInfo = php_componere_definition_magic_find(ce, "__debuginfo");
-	if (parent->serialize_func)
-		ce->serialize_func = php_componere_definition_magic_find(ce, "serialize");
-	if (parent->unserialize_func)
-		ce->unserialize_func = php_componere_definition_magic_find(ce, "unserialize");
+
+	ce->serialize_func = php_componere_definition_magic_find(ce, "serialize");
+	ce->unserialize_func = php_componere_definition_magic_find(ce, "unserialize");
+
+	ce->serialize = parent->serialize;
+	ce->unserialize = parent->unserialize;
 #undef php_componere_definition_magic_find
 }
 
