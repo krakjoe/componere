@@ -622,16 +622,16 @@ PHP_METHOD(Definition, addConstant)
 		return;
 	}
 
-	if (zend_hash_exists(&o->ce->constants_table, name)) {
+	if (o->registered) {
 		php_componere_throw(
-			"cannot redeclare %s::%s",
+			"%s is already registered, cannot add constant %s", 
 			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
 		return;
 	}
 
-	if (o->registered) {
+	if (zend_hash_exists(&o->ce->constants_table, name)) {
 		php_componere_throw(
-			"%s is already registered, cannot add constant %s", 
+			"cannot redeclare %s::%s",
 			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
 		return;
 	}

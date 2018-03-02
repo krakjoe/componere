@@ -59,7 +59,7 @@ namespace Componere {
 		public function isApplied() : bool;
 	}
 	final class Method {
-		public function __construct(string $name, Closure $method);
+		public function __construct(Closure $method);
 
 		public function setProtected() : Method;
 		public function setPrivate() : Method;
