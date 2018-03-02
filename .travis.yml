@@ -16,6 +16,10 @@ env:
     - TEST_PHP_ARGS="-m -q --show-diff --show-mem"
     - TEST_PHP_ARGS="-q --show-diff"
 
+allow_failures:
+  - php: nightly
+    env: TEST_PHP_ARGS="-m -q --show-diff --show-mem"
+
 script:
   - phpize
   - wget -q -O run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
