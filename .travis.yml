@@ -16,9 +16,10 @@ env:
     - TEST_PHP_ARGS="-m -q --show-diff --show-mem"
     - TEST_PHP_ARGS="-q --show-diff"
 
-allow_failures:
-  - php: nightly
-    env: TEST_PHP_ARGS="-m -q --show-diff --show-mem"
+matrix:
+  allow_failures:
+    - php: nightly
+      env: TEST_PHP_ARGS="-m -q --show-diff --show-mem"
 
 script:
   - phpize
