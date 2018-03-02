@@ -30,6 +30,7 @@
 #include <zend_inheritance.h>
 
 #include "src/common.h"
+#include "src/reflection.h"
 #include "src/definition.h"
 #include "src/method.h"
 #include "src/value.h"
@@ -591,10 +592,12 @@ PHP_METHOD(Definition, addProperty)
 		return;
 	}
 
-	zend_declare_property(o->ce, 
-		ZSTR_VAL(name), ZSTR_LEN(name), 
-		php_componere_value_default(value), 
-		php_componere_value_access(value));
+	if (zend_declare_property(o->ce,
+		ZSTR_VAL(name), ZSTR_LEN(name),
+		php_componere_value_default(value),
+		php_componere_value_access(value)) == SUCCESS) {
+		php_componere_value_addref(value);
+	}
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
@@ -713,10 +716,26 @@ PHP_METHOD(Definition, isRegistered)
 	RETURN_BOOL(o->registered);
 }
 
+PHP_METHOD(Definition, getReflector)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	php_componere_reflection_object_factory(
+		return_value,
+		php_componere_reflection_class_ce, 
+		PHP_REF_TYPE_OTHER, 
+		o->ce,
+		ZSTR_KNOWN(ZEND_STR_NAME),
+		o->ce->name);
+}
+
 static zend_function_entry php_componere_definition_abstract_methods[] = {
 	PHP_ME(Definition, addMethod, php_componere_definition_method, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addTrait, php_componere_definition_trait, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addInterface, php_componere_definition_interface, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, getReflector, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 

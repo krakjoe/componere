@@ -15,28 +15,30 @@
   | Author: krakjoe <krakjoe@php.net>                                    |
   +----------------------------------------------------------------------+
  */
-#ifndef HAVE_COMPONERE_VALUE_H
-#define HAVE_COMPONERE_VALUE_H
+#ifndef HAVE_COMPONERE_REFLECTION_H
+#define HAVE_COMPONERE_REFLECTION_H
 
-typedef struct _php_componere_value_t {
-	zval value;
-	zend_long access;
-	zend_object std;
-} php_componere_value_t;
+extern PHP_RINIT_FUNCTION(Componere_Reflection);
 
-#define php_componere_value_from(o) \
-	((php_componere_value_t*) \
-		((char*) o - XtOffsetOf(php_componere_value_t, std)))
-#define php_componere_value_fetch(z) php_componere_value_from(Z_OBJ_P(z))
-#define php_componere_value_default(z) (&php_componere_value_fetch(z)->value)
-#define php_componere_value_access(z) (php_componere_value_fetch(z)->access)
-#define php_componere_value_addref(z) do { \
-	if (!Z_ISUNDEF(php_componere_value_fetch(z)->value)) \
-		Z_TRY_ADDREF(php_componere_value_fetch(z)->value); \
-} while(0)
-extern PHP_MINIT_FUNCTION(Componere_Value);
-extern PHP_RINIT_FUNCTION(Componere_Value);
+extern zend_class_entry* php_componere_reflection_class_ce;
+extern zend_class_entry* php_componere_reflection_method_ce;
 
-extern zend_class_entry *php_componere_value_ce;
+typedef enum {
+	PHP_REF_TYPE_OTHER,
+	PHP_REF_TYPE_FUNCTION,
+	PHP_REF_TYPE_GENERATOR,
+	PHP_REF_TYPE_PARAMETER,
+	PHP_REF_TYPE_TYPE,
+	PHP_REF_TYPE_PROPERTY,
+	PHP_REF_TYPE_DYNAMIC_PROPERTY,
+	PHP_REF_TYPE_CLASS_CONSTANT
+} php_reflection_type_t;
 
+void php_componere_reflection_object_factory(
+	zval *return_value, 
+	zend_class_entry *ce, 
+	php_reflection_type_t type, 
+	void *ptr,
+	zend_string *k,
+	zend_string *v);
 #endif

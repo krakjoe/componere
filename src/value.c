@@ -62,14 +62,14 @@ static inline HashTable* php_componere_value_collect(zval *object, zval **table,
 static inline void php_componere_value_destroy(zend_object *zo) {
 	php_componere_value_t *o = php_componere_value_from(zo);
 
-	if (Z_REFCOUNTED(o->value)) {
+	if (!Z_ISUNDEF(o->value) && Z_REFCOUNTED(o->value)) {
 		zval_ptr_dtor(&o->value);
 	}
 
 	zend_object_std_dtor(&o->std);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_value_construct, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(php_componere_value_construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, value)
 ZEND_END_ARG_INFO()
 
@@ -78,8 +78,14 @@ PHP_METHOD(Value, __construct)
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 	zval *value = NULL;
 
-	if (php_componere_parse_parameters("z", &value) != SUCCESS) {
+	if (php_componere_parse_parameters("|z", &value) != SUCCESS) {
 		php_componere_wrong_parameters("value expected");
+		return;
+	}
+
+	o->access = ZEND_ACC_PUBLIC;
+
+	if (!value) {
 		return;
 	}
 
@@ -90,16 +96,21 @@ PHP_METHOD(Value, __construct)
 		case IS_TRUE:
 		case IS_FALSE:
 		case IS_NULL:
-			ZVAL_COPY(&o->value, value);
+			ZVAL_DUP(&o->value, value);
 		break;
+
+		case IS_ARRAY:
+			if (zend_hash_num_elements(Z_ARRVAL_P(value)) == 0) {
+				ZVAL_DUP(&o->value, value);
+				break;
+			}
 		
 		default:
 			php_componere_wrong_parameters(
 				"values of type %s cannot be declared with default values",
 				zend_get_type_by_const(Z_TYPE_P(value)));
+			return;
 	}
-
-	o->access = ZEND_ACC_PUBLIC;
 }
 
 PHP_METHOD(Value, setProtected)
@@ -150,6 +161,11 @@ static zend_function_entry php_componere_value_methods[] = {
 	PHP_ME(Value, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Value, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Value, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+
+	/*
+	PHP_ME(Value, isProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Value, isPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Value, isStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC) */
 	PHP_FE_END
 };
 

@@ -28,6 +28,7 @@
 #include <ext/spl/spl_exceptions.h>
 
 #include "src/common.h"
+#include "src/reflection.h"
 #include "src/method.h"
 
 zend_class_entry *php_componere_method_ce;
@@ -147,11 +148,28 @@ PHP_METHOD(Method, setStatic)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Method, getReflector)
+{
+	php_componere_method_t *o = php_componere_method_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	php_componere_reflection_object_factory(
+		return_value,
+		php_componere_reflection_method_ce, 
+		PHP_REF_TYPE_FUNCTION,
+		o->function,
+		ZSTR_KNOWN(ZEND_STR_NAME),
+		o->function->common.function_name);
+}
+
 static zend_function_entry php_componere_method_methods[] = {
 	PHP_ME(Method, __construct, php_componere_method_construct, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+
+	PHP_ME(Method, getReflector, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 

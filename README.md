@@ -18,6 +18,7 @@ API
   * When a method returns the parent type, it is suitable for chaining
   * All classes are final, and do not support properties
   * Only Componere\Method supports cloning
+  * Depends on Reflection
 
 ```php
 namespace Componere {
@@ -26,6 +27,8 @@ namespace Componere {
 			public function addTrait(string $name) : Definition;
 			public function addInterface(string $name) : Definition;
 			public function addMethod(string $name, Method $method) : Definition;
+
+			public function getReflector() : ReflectionClass;
 		}
 	}
 
@@ -61,9 +64,12 @@ namespace Componere {
 		public function setProtected() : Method;
 		public function setPrivate() : Method;
 		public function setStatic() : Method;
+
+		public function getReflector() : ReflectionMethod;
 	}
 	final class Value {
-		public function __construct($value);
+		public function __construct();
+		public function __construct($default);
 
 		public function setProtected() : Value;
 		public function setPrivate() : Value;

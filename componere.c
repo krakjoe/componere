@@ -26,6 +26,7 @@
 #include "src/definition.h"
 #include "src/patch.h"
 #include "src/method.h"
+#include "src/reflection.h"
 #include "src/value.h"
 
 static inline void php_componere_optimizer_adjust()
@@ -69,6 +70,7 @@ PHP_RINIT_FUNCTION(componere)
 	PHP_RINIT(Componere_Patch)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RINIT(Componere_Method)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RINIT(Componere_Value)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_RINIT(Componere_Reflection)(INIT_FUNC_ARGS_PASSTHRU);
 
 	return SUCCESS;
 }
@@ -91,10 +93,18 @@ static const zend_function_entry componere_functions[] = {
 };
 /* }}} */
 
+/* {{{ componere_module_deps[] */
+static const zend_module_dep componere_module_deps[] = {
+	ZEND_MOD_REQUIRED("reflection")
+	{NULL, NULL, NULL}
+}; /* }}} */
+
 /* {{{ componere_module_entry
  */
 zend_module_entry componere_module_entry = {
-	STANDARD_MODULE_HEADER,
+	STANDARD_MODULE_HEADER_EX,
+	NULL,
+	componere_module_deps,
 	"componere",
 	componere_functions,
 	PHP_MINIT(componere),
