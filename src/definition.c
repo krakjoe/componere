@@ -643,6 +643,13 @@ PHP_METHOD(Definition, addConstant)
 		return;
 	}
 
+	if (Z_ISUNDEF_P(php_componere_value_default(value))) {
+		php_componere_throw(
+			"%s::%s cannot be undefined",
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+		return;
+	}
+
 #if PHP_VERSION_ID >= 70100
 	zend_declare_class_constant_ex(
 		o->ce, name, 

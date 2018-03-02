@@ -20,10 +20,12 @@ $a->apply();
 $reflector = $a->getReflector();
 
 var_dump($instance instanceof IFace,
-	 $reflector->implementsInterface(IFace::class));
+	 $reflector->implementsInterface(IFace::class),
+	 $reflector->isInstance($instance));
 ?>
 --EXPECT--
 bool(false)
+bool(true)
 bool(true)
 bool(true)
 
