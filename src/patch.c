@@ -61,6 +61,10 @@ static inline void php_componere_patch_destroy(zend_object *zo) {
 		zval_ptr_dtor(&o->instance);
 	}
 
+	if (!Z_ISUNDEF(o->reflector)) {
+		zval_ptr_dtor(&o->reflector);
+	}
+
 	zend_object_std_dtor(&o->std);
 }
 
