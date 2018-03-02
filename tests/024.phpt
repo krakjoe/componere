@@ -7,8 +7,8 @@ use Componere\Property;
 use Componere\Value;
 
 $a = new Definition(A::class);
-$a->addProperty("name", new Value(0));
-$a->addProperty("name", new Value(0));
+$a->addProperty("name", new Value());
+$a->addProperty("name", new Value());
 ?>
 --EXPECTF--
 Fatal error: Uncaught RuntimeException: cannot redeclare A::$name in %s:8

@@ -6,11 +6,9 @@ use Componere\Definition;
 use Componere\Value;
 
 $a = new Definition(A::class);
-$a->addProperty("prop", 
-	(new Value(10))->setPrivate());
-$a->register();
+$a->addProperty("prop", (new Value())->setPrivate());
 
-$reflector = new ReflectionClass(A::class);
+$reflector = $a->getReflector();
 $reflector = $reflector->getProperty("prop");
 var_dump($reflector->isPrivate());
 ?>

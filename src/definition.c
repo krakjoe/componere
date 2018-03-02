@@ -30,6 +30,7 @@
 #include <zend_inheritance.h>
 
 #include "src/common.h"
+#include "src/reflection.h"
 #include "src/definition.h"
 #include "src/method.h"
 #include "src/value.h"
@@ -303,6 +304,10 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 
 	if (o->ce->name && (!o->registered || o->ce->refcount > 1)) {
 		php_componere_destroy_class(o->ce);
+	}
+
+	if (!Z_ISUNDEF(o->reflector)) {
+		zval_ptr_dtor(&o->reflector);
 	}
 
 	zend_object_std_dtor(&o->std);
@@ -591,10 +596,12 @@ PHP_METHOD(Definition, addProperty)
 		return;
 	}
 
-	zend_declare_property(o->ce, 
-		ZSTR_VAL(name), ZSTR_LEN(name), 
-		php_componere_value_default(value), 
-		php_componere_value_access(value));
+	if (zend_declare_property(o->ce,
+		ZSTR_VAL(name), ZSTR_LEN(name),
+		php_componere_value_default(value),
+		php_componere_value_access(value)) == SUCCESS) {
+		php_componere_value_addref(value);
+	}
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
@@ -615,13 +622,6 @@ PHP_METHOD(Definition, addConstant)
 		return;
 	}
 
-	if (zend_hash_exists(&o->ce->constants_table, name)) {
-		php_componere_throw(
-			"cannot redeclare %s::%s",
-			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
-		return;
-	}
-
 	if (o->registered) {
 		php_componere_throw(
 			"%s is already registered, cannot add constant %s", 
@@ -629,9 +629,23 @@ PHP_METHOD(Definition, addConstant)
 		return;
 	}
 
+	if (zend_hash_exists(&o->ce->constants_table, name)) {
+		php_componere_throw(
+			"cannot redeclare %s::%s",
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+		return;
+	}
+
 	if (php_componere_value_access(value) & ZEND_ACC_STATIC) {
 		php_componere_throw(
 			"%s::%s cannot be declared static", 
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+		return;
+	}
+
+	if (Z_ISUNDEF_P(php_componere_value_default(value))) {
+		php_componere_throw(
+			"%s::%s cannot be undefined",
 			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
 		return;
 	}
@@ -713,10 +727,31 @@ PHP_METHOD(Definition, isRegistered)
 	RETURN_BOOL(o->registered);
 }
 
+PHP_METHOD(Definition, getReflector)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	if (!Z_ISUNDEF(o->reflector)) {
+		RETURN_ZVAL(&o->reflector, 1, 0);
+	}
+
+	php_componere_reflection_object_factory(
+		&o->reflector,
+		php_componere_reflection_class_ce, 
+		PHP_REF_TYPE_OTHER, 
+		o->ce,
+		o->ce->name);
+
+	RETURN_ZVAL(&o->reflector, 1, 0);
+}
+
 static zend_function_entry php_componere_definition_abstract_methods[] = {
 	PHP_ME(Definition, addMethod, php_componere_definition_method, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addTrait, php_componere_definition_trait, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addInterface, php_componere_definition_interface, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, getReflector, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 

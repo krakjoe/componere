@@ -2,17 +2,11 @@
 Method::setPrivate
 --FILE--
 <?php
-use Componere\Definition;
 use Componere\Method;
-$a = new Definition(A::class);
-$m = (new Method(function(){
-	return true;
-}))->setPrivate();
-$a->addMethod("name", $m);
-$a->register();
 
-$reflector = new ReflectionClass(A::class);
-$reflector = $reflector->getMethod("name");
+$m = (new Method(function(){}))->setPrivate();
+
+$reflector = $m->getReflector();
 
 var_dump($reflector->isPrivate());
 ?>

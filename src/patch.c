@@ -32,10 +32,10 @@
 #include "src/common.h"
 #include "src/definition.h"
 
-zend_class_entry *php_componere_definition_patch_ce;
-zend_object_handlers php_componere_definition_patch_handlers;
+zend_class_entry *php_componere_patch_ce;
+zend_object_handlers php_componere_patch_handlers;
 
-static inline zend_object* php_componere_definition_patch_create(zend_class_entry *ce) {
+static inline zend_object* php_componere_patch_create(zend_class_entry *ce) {
 	php_componere_definition_t *o = 
 		(php_componere_definition_t*) 
 			ecalloc(1, sizeof(php_componere_definition_t));
@@ -45,26 +45,12 @@ static inline zend_object* php_componere_definition_patch_create(zend_class_entr
 	o->ce = (zend_class_entry*) 
 		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
 
-	o->std.handlers = &php_componere_definition_patch_handlers;
+	o->std.handlers = &php_componere_patch_handlers;
 
 	return &o->std;
 }
 
-static inline HashTable* php_componere_definition_patch_collect(zval *object, zval **table, int *num) {
-	php_componere_definition_t *o = php_componere_definition_fetch(object);
-
-	if (!Z_ISUNDEF(o->instance)) {
-		*table = &o->instance;
-		*num = 1;
-	} else {
-		*table = NULL;
-		*num = 0;
-	}
-	
-	return NULL;
-}
-
-static inline void php_componere_definition_patch_destroy(zend_object *zo) {
+static inline void php_componere_patch_destroy(zend_object *zo) {
 	php_componere_definition_t *o = php_componere_definition_from(zo);
 
 	if (!Z_ISUNDEF(o->instance)) {
@@ -73,6 +59,10 @@ static inline void php_componere_definition_patch_destroy(zend_object *zo) {
 		Z_OBJCE(o->instance) = o->saved;
 
 		zval_ptr_dtor(&o->instance);
+	}
+
+	if (!Z_ISUNDEF(o->reflector)) {
+		zval_ptr_dtor(&o->reflector);
 	}
 
 	zend_object_std_dtor(&o->std);
@@ -176,7 +166,7 @@ PHP_METHOD(Patch, revert)
 	zo->ce = o->saved;
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_patch_closure, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(php_componere_patch_closure, 0, 0, 1)
 	ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO()
 
@@ -233,9 +223,9 @@ PHP_METHOD(Patch, isApplied)
 	RETURN_BOOL(Z_OBJCE(o->instance) == o->ce);
 }
 
-static zend_function_entry php_componere_definition_patch_methods[] = {
+static zend_function_entry php_componere_patch_methods[] = {
 	PHP_ME(Patch, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, getClosure, php_componere_definition_patch_closure, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, getClosure, php_componere_patch_closure, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, getClosures, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, apply, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, revert, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
@@ -246,24 +236,24 @@ static zend_function_entry php_componere_definition_patch_methods[] = {
 PHP_MINIT_FUNCTION(Componere_Patch) {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere", "Patch", php_componere_definition_patch_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere", "Patch", php_componere_patch_methods);
 	
-	php_componere_definition_patch_ce = zend_register_internal_class_ex(&ce, php_componere_definition_abstract_ce);
-	php_componere_definition_patch_ce->create_object = php_componere_definition_patch_create;
+	php_componere_patch_ce = zend_register_internal_class_ex(&ce, php_componere_definition_abstract_ce);
+	php_componere_patch_ce->create_object = php_componere_patch_create;
 
 	php_componere_setup_handlers(
-		&php_componere_definition_patch_handlers, 
+		&php_componere_patch_handlers, 
 		php_componere_deny_debug,
-		php_componere_definition_patch_collect,
+		php_componere_deny_collect,
 		php_componere_deny_clone,
-		php_componere_definition_patch_destroy, 
+		php_componere_patch_destroy, 
 		XtOffsetOf(php_componere_definition_t, std));
 
 	return SUCCESS;
 }
 
 PHP_RINIT_FUNCTION(Componere_Patch) {
-	php_componere_definition_patch_ce->ce_flags |= ZEND_ACC_FINAL;
+	php_componere_patch_ce->ce_flags |= ZEND_ACC_FINAL;
 
 	return SUCCESS;
 }

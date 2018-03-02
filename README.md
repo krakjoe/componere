@@ -18,6 +18,7 @@ API
   * When a method returns the parent type, it is suitable for chaining
   * All classes are final, and do not support properties
   * Only Componere\Method supports cloning
+  * Depends on Reflection
 
 ```php
 namespace Componere {
@@ -26,6 +27,8 @@ namespace Componere {
 			public function addTrait(string $name) : Definition;
 			public function addInterface(string $name) : Definition;
 			public function addMethod(string $name, Method $method) : Definition;
+
+			public function getReflector() : \ReflectionClass;
 		}
 	}
 
@@ -38,7 +41,7 @@ namespace Componere {
 		public function addProperty(string $name, Value $property) : Definition;
 		public function addConstant(string $name, Value $constant) : Definition; 
 
-		public function getClosure(string $name) : Closure;
+		public function getClosure(string $name) : \Closure;
 		public function getClosures() : array;
 
 		public function register();
@@ -48,7 +51,7 @@ namespace Componere {
 		public function __construct(object $instance);
 		public function __construct(object $instance, array $interfaces);
 
-		public function getClosure(string $name) : Closure;
+		public function getClosure(string $name) : \Closure;
 		public function getClosures() : array;
 
 		public function apply();
@@ -56,18 +59,27 @@ namespace Componere {
 		public function isApplied() : bool;
 	}
 	final class Method {
-		public function __construct(string $name, Closure $method);
+		public function __construct(Closure $method);
 
 		public function setProtected() : Method;
 		public function setPrivate() : Method;
 		public function setStatic() : Method;
+
+		public function getReflector() : \ReflectionMethod;
 	}
 	final class Value {
-		public function __construct($value);
+		public function __construct();
+		public function __construct($default);
 
 		public function setProtected() : Value;
 		public function setPrivate() : Value;
 		public function setStatic() : Value;
+
+		public function isProtected() : bool;
+		public function isPrivate() : bool;
+		public function isStatic() : bool;
+
+		public function hasDefault() : bool;
 	}
 }
 ```

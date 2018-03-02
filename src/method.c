@@ -28,6 +28,7 @@
 #include <ext/spl/spl_exceptions.h>
 
 #include "src/common.h"
+#include "src/reflection.h"
 #include "src/method.h"
 
 zend_class_entry *php_componere_method_ce;
@@ -73,6 +74,10 @@ static inline void php_componere_method_destroy(zend_object *zo) {
 
 	if (o->function) {
 		destroy_zend_function(o->function);
+	}
+
+	if (!Z_ISUNDEF(o->reflector)) {
+		zval_ptr_dtor(&o->reflector);
 	}
 
 	zend_object_std_dtor(&o->std);
@@ -147,11 +152,33 @@ PHP_METHOD(Method, setStatic)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Method, getReflector)
+{
+	php_componere_method_t *o = php_componere_method_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	if (!Z_ISUNDEF(o->reflector)) {
+		RETURN_ZVAL(&o->reflector, 1, 0);
+	}
+
+	php_componere_reflection_object_factory(
+		&o->reflector,
+		php_componere_reflection_method_ce, 
+		PHP_REF_TYPE_FUNCTION,
+		o->function,
+		o->function->common.function_name);
+
+	RETURN_ZVAL(&o->reflector, 1 , 0);
+}
+
 static zend_function_entry php_componere_method_methods[] = {
 	PHP_ME(Method, __construct, php_componere_method_construct, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+
+	PHP_ME(Method, getReflector, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 

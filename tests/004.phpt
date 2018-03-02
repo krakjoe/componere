@@ -20,6 +20,12 @@ $definition->register();
 $a = new A();
 
 var_dump($a->member());
+
+$reflector = $definition->getReflector();
+$reflector = $reflector->getMethod("thing");
+
+var_dump($reflector->isPrivate());
 ?>
 --EXPECT--
+bool(true)
 bool(true)

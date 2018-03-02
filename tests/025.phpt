@@ -8,7 +8,7 @@ use Componere\Value;
 
 $a = new Definition(A::class);
 $a->register();
-$a->addProperty("name", new Value(0));
+$a->addProperty("name", new Value());
 ?>
 --EXPECTF--
 Fatal error: Uncaught RuntimeException: A is already registered, cannot add property name in %s:8
