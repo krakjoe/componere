@@ -28,7 +28,7 @@ namespace Componere {
 			public function addInterface(string $name) : Definition;
 			public function addMethod(string $name, Method $method) : Definition;
 
-			public function getReflector() : ReflectionClass;
+			public function getReflector() : \ReflectionClass;
 		}
 	}
 
@@ -41,7 +41,7 @@ namespace Componere {
 		public function addProperty(string $name, Value $property) : Definition;
 		public function addConstant(string $name, Value $constant) : Definition; 
 
-		public function getClosure(string $name) : Closure;
+		public function getClosure(string $name) : \Closure;
 		public function getClosures() : array;
 
 		public function register();
@@ -51,7 +51,7 @@ namespace Componere {
 		public function __construct(object $instance);
 		public function __construct(object $instance, array $interfaces);
 
-		public function getClosure(string $name) : Closure;
+		public function getClosure(string $name) : \Closure;
 		public function getClosures() : array;
 
 		public function apply();
@@ -65,7 +65,7 @@ namespace Componere {
 		public function setPrivate() : Method;
 		public function setStatic() : Method;
 
-		public function getReflector() : ReflectionMethod;
+		public function getReflector() : \ReflectionMethod;
 	}
 	final class Value {
 		public function __construct();
