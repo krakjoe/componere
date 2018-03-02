@@ -39,6 +39,5 @@ void php_componere_reflection_object_factory(
 	zend_class_entry *ce, 
 	php_reflection_type_t type, 
 	void *ptr,
-	zend_string *k,
-	zend_string *v);
+	zend_string *named);
 #endif

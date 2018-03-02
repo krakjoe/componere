@@ -49,9 +49,13 @@ void php_componere_reflection_object_factory(
 		zend_class_entry *ce, 
 		php_reflection_type_t type, 
 		void *ptr,
-		zend_string *k,
-		zend_string *v) {
+		zend_string *named) {
 	php_reflection_object_t *ro;
+#if PHP_VERSION_ID < 70300
+	zend_string *name = zend_string_init(ZEND_STRL("name"), 0);
+#else
+	zend_string *name = ZSTR_KNOWN(ZEND_STR_NAME);
+#endif
 	zval key, value;
 
 	object_init_ex(return_value, ce);
@@ -60,10 +64,14 @@ void php_componere_reflection_object_factory(
 	ro->ptr = ptr;
 	ro->ref_type = type;
 
-	ZVAL_STR(&key, k);
-	ZVAL_STR(&value, v);
+	ZVAL_STR(&key, name);
+	ZVAL_STR(&value, named);
 
 	zend_std_write_property(return_value, &key, &value, NULL);
+
+#if PHP_VERSION_ID < 70300
+	zend_string_release(name);
+#endif
 }
 
 static inline zend_class_entry* php_componere_reflection_class(char *chars, size_t len) {

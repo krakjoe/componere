@@ -159,7 +159,6 @@ PHP_METHOD(Method, getReflector)
 		php_componere_reflection_method_ce, 
 		PHP_REF_TYPE_FUNCTION,
 		o->function,
-		ZSTR_KNOWN(ZEND_STR_NAME),
 		o->function->common.function_name);
 }
 

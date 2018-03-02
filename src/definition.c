@@ -727,7 +727,6 @@ PHP_METHOD(Definition, getReflector)
 		php_componere_reflection_class_ce, 
 		PHP_REF_TYPE_OTHER, 
 		o->ce,
-		ZSTR_KNOWN(ZEND_STR_NAME),
 		o->ce->name);
 }
 
