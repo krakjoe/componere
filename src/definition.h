@@ -27,6 +27,7 @@ typedef struct _php_componere_definition_t {
 	zend_class_entry *saved;
 	zend_bool registered;
 	zval instance;
+	zval reflector;
 	zend_object std;
 } php_componere_definition_t;
 

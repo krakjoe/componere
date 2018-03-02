@@ -20,6 +20,7 @@
 
 typedef struct _php_componere_method_t {
 	zend_function *function;
+	zval reflector;
 	zend_object std;
 } php_componere_method_t;
 

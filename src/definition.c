@@ -306,6 +306,10 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 		php_componere_destroy_class(o->ce);
 	}
 
+	if (!Z_ISUNDEF(o->reflector)) {
+		zval_ptr_dtor(&o->reflector);
+	}
+
 	zend_object_std_dtor(&o->std);
 }
 
@@ -722,12 +726,18 @@ PHP_METHOD(Definition, getReflector)
 
 	php_componere_no_parameters();
 
+	if (!Z_ISUNDEF(o->reflector)) {
+		RETURN_ZVAL(&o->reflector, 1, 0);
+	}
+
 	php_componere_reflection_object_factory(
-		return_value,
+		&o->reflector,
 		php_componere_reflection_class_ce, 
 		PHP_REF_TYPE_OTHER, 
 		o->ce,
 		o->ce->name);
+
+	RETURN_ZVAL(&o->reflector, 1, 0);
 }
 
 static zend_function_entry php_componere_definition_abstract_methods[] = {
