@@ -45,20 +45,6 @@ static inline zend_object* php_componere_value_create(zend_class_entry *ce) {
 	return &o->std;
 }
 
-static inline HashTable* php_componere_value_collect(zval *object, zval **table, int *num) {
-	zval *value = php_componere_value_default(object);
-
-	if (Z_TYPE_P(value) != IS_NULL) {
-		*table = value;
-		*num = 1;
-	} else {
-		*table = NULL;
-		*num = 0;
-	}
-	
-	return NULL;
-}
-
 static inline void php_componere_value_destroy(zend_object *zo) {
 	php_componere_value_t *o = php_componere_value_from(zo);
 
@@ -124,7 +110,7 @@ PHP_METHOD(Value, setProtected)
 		return;
 	}
 
-	o->access = ZEND_ACC_PROTECTED;
+	o->access |= ZEND_ACC_PROTECTED;
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
@@ -140,7 +126,7 @@ PHP_METHOD(Value, setPrivate)
 		return;
 	}
 
-	o->access = ZEND_ACC_PRIVATE;
+	o->access |= ZEND_ACC_PRIVATE;
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
@@ -156,16 +142,53 @@ PHP_METHOD(Value, setStatic)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Value, isPrivate)
+{
+	php_componere_value_t *o = php_componere_value_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	RETURN_BOOL((o->access & ZEND_ACC_PRIVATE) == ZEND_ACC_PRIVATE);
+}
+
+PHP_METHOD(Value, isProtected)
+{
+	php_componere_value_t *o = php_componere_value_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	RETURN_BOOL((o->access & ZEND_ACC_PROTECTED) == ZEND_ACC_PROTECTED);
+}
+
+PHP_METHOD(Value, isStatic)
+{
+	php_componere_value_t *o = php_componere_value_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	RETURN_BOOL((o->access & ZEND_ACC_STATIC) == ZEND_ACC_STATIC);
+}
+
+PHP_METHOD(Value, hasDefault)
+{
+	php_componere_value_t *o = php_componere_value_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	RETURN_BOOL(!Z_ISUNDEF(o->value));
+}
+
 static zend_function_entry php_componere_value_methods[] = {
 	PHP_ME(Value, __construct, php_componere_value_construct, ZEND_ACC_PUBLIC)
 	PHP_ME(Value, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Value, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Value, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 
-	/*
 	PHP_ME(Value, isProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Value, isPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, isStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC) */
+	PHP_ME(Value, isStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+
+	PHP_ME(Value, hasDefault, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 
@@ -180,7 +203,7 @@ PHP_MINIT_FUNCTION(Componere_Value) {
 	php_componere_setup_handlers(
 		&php_componere_value_handlers, 
 		php_componere_deny_debug,
-		php_componere_value_collect,
+		php_componere_deny_collect,
 		php_componere_deny_clone,
 		php_componere_value_destroy, 
 		XtOffsetOf(php_componere_value_t, std));

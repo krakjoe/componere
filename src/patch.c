@@ -50,20 +50,6 @@ static inline zend_object* php_componere_patch_create(zend_class_entry *ce) {
 	return &o->std;
 }
 
-static inline HashTable* php_componere_patch_collect(zval *object, zval **table, int *num) {
-	php_componere_definition_t *o = php_componere_definition_fetch(object);
-
-	if (!Z_ISUNDEF(o->instance)) {
-		*table = &o->instance;
-		*num = 1;
-	} else {
-		*table = NULL;
-		*num = 0;
-	}
-	
-	return NULL;
-}
-
 static inline void php_componere_patch_destroy(zend_object *zo) {
 	php_componere_definition_t *o = php_componere_definition_from(zo);
 
@@ -254,7 +240,7 @@ PHP_MINIT_FUNCTION(Componere_Patch) {
 	php_componere_setup_handlers(
 		&php_componere_patch_handlers, 
 		php_componere_deny_debug,
-		php_componere_patch_collect,
+		php_componere_deny_collect,
 		php_componere_deny_clone,
 		php_componere_patch_destroy, 
 		XtOffsetOf(php_componere_definition_t, std));

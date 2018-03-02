@@ -74,6 +74,12 @@ namespace Componere {
 		public function setProtected() : Value;
 		public function setPrivate() : Value;
 		public function setStatic() : Value;
+
+		public function isProtected() : bool;
+		public function isPrivate() : bool;
+		public function isStatic() : bool;
+
+		public function hasDefault() : bool;
 	}
 }
 ```
