@@ -92,5 +92,7 @@ PHP_RINIT_FUNCTION(Componere_Reflection) {
 		php_componere_reflection_class(ZEND_STRL("ReflectionClass"));
 	php_componere_reflection_method_ce =
 		php_componere_reflection_class(ZEND_STRL("ReflectionMethod"));
+
+	return SUCCESS;
 }
 #endif
