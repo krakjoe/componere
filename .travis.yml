@@ -23,6 +23,7 @@ before_install:
 
 before_script:
   - rm -f $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/xdebug.ini
+  - echo "variables_order=EGPCS" >> $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/php.ini
 
 script:
   - phpize
