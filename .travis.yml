@@ -1,4 +1,6 @@
 language: php
+compiler:
+  - gcc
 addons:
   apt:
     packages:
@@ -21,9 +23,15 @@ matrix:
     - php: nightly
       env: TEST_PHP_ARGS="-m -q --show-diff --show-mem"
 
+before_install:
+  - pip install --user cpp-coveralls
+
 script:
   - phpize
   - wget -q -O run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
-  - ./configure
+  - ./configure --enable-componere-coverage
   - make
-  - make test
+  - make componere-test-coverage
+
+after_success:
+  - coveralls --exclude Zend --gcov-options '\-lp'
