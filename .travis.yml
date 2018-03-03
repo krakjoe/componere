@@ -17,11 +17,14 @@ env:
   matrix:
     - TEST_PHP_ARGS="-m -q --show-diff --show-mem"
     - TEST_PHP_ARGS="-q --show-diff"
+    - TEST_PHP_ARGS="-m -q --show-diff --show-mem -dopcache.enable_cli=1 -dopcache.optimization_level=0x7FFEBFFF"
+    - TEST_PHP_ARGS="-q --show-diff -dopcache.enable_cli=1 -dopcache.optimization_level=0x7FFEBFFF"
 
 matrix:
   allow_failures:
     - php: nightly
       env: TEST_PHP_ARGS="-m -q --show-diff --show-mem"
+      env: TEST_PHP_ARGS="-m -q --show-diff --show-mem -dopcache.enable_cli=1 -dopcache.optimization_level=0x7FFEBFFF"
 
 before_install:
   - pip install --user cpp-coveralls
