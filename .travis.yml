@@ -28,7 +28,6 @@ script:
   - phpize
   - wget -q -O run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
   - ./configure --enable-componere-coverage
-  - make
   - make componere-test-coverage
 
 after_success:
