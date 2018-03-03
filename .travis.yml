@@ -22,8 +22,9 @@ before_install:
   - pip install --user cpp-coveralls
 
 before_script:
-  - rm -f $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/xdebug.ini
   - echo "variables_order=EGPCS" >> $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/php.ini
+  - echo                          > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/xdebug.ini
+  - echo "extension=componere.so" > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/componere.ini
 
 script:
   - phpize
