@@ -14,36 +14,22 @@ php:
 env:
   global:
     - REPORT_EXIT_STATUS=1
-    - TEST_PHP_EXECUTABLE=$(which php)
-    - CCACHE_DISABLE=1
-    - EXTRA_CFLAGS="-fprofile-arcs -ftest-coverage"
   matrix:
     - TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=0"
     - TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=1 -d opcache.optimization_level=0x7FFEBFFF"
-    - TEST_PHP_ARGS="-q -m --show-diff --show-mem -d opcache.enable_cli=0"
-    - TEST_PHP_ARGS="-q -m --show-diff --show-mem -d opcache.enable_cli=1 -d opcache.optimization_level=0x7FFEBFFF"
-
-matrix:
-  allow_failures:
-    - php: nightly
-      env: TEST_PHP_ARGS="-q -m --show-diff --show-mem -d opcache.enable_cli=0"
-    - php: nightly
-      env: TEST_PHP_ARGS="-q -m --show-diff --show-mem -d opcache.enable_cli=1 -d opcache.optimization_level=0x7FFEBFFF"
 
 before_install:
   - pip install --user cpp-coveralls
 
-script:
+before_script:
   - rm -f $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/xdebug.ini
-  - php -v
+
+script:
   - phpize
   - wget -q -O run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
   - ./configure --enable-componere-coverage
   - make
-  - make install
-  - echo "variables_order=EGPCS" >> $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/php.ini
-  - echo "extension=componere.so" > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/componere.ini
-  - php run-tests.php tests
+  - make componere-test-coverage
 
 after_success:
   - coveralls -b $TRAVIS_BUILD_DIR -E Zend --gcov-options '\-lp'
