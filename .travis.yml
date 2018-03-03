@@ -39,6 +39,7 @@ script:
   - ./configure --enable-componere-coverage
   - make
   - make install
+  - echo "variables_order=EGPCS" >> $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/php.ini
   - echo "extension=componere.so" > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/componere.ini
   - php run-tests.php tests
 
