@@ -33,10 +33,8 @@ matrix:
 before_install:
   - pip install --user cpp-coveralls
 
-before_script:
-  - phpenv config-rm xdebug.ini
-
 script:
+  - rm -f $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/xdebug.ini
   - php -v
   - phpize
   - wget -q -O run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
