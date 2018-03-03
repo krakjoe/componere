@@ -1,5 +1,5 @@
 componere-test-coverage:
-	CCACHE_DISABLE=1 $(MAKE) EXTRA_CFLAGS="-fprofile-arcs -ftest-coverage" clean test
+	CCACHE_DISABLE=1 EXTRA_CFLAGS="-fprofile-arcs -ftest-coverage" $(MAKE) clean test
 
 componere-test-coverage-lcov: componere-test-coverage
 	lcov -c --directory $(top_srcdir)/src/.libs --output-file $(top_srcdir)/coverage.info

@@ -14,6 +14,9 @@ php:
 env:
   global:
     - REPORT_EXIT_STATUS=1
+    - TEST_PHP_EXECUTABLE=$(which php)
+    - CCACHE_DISABLE=1
+    - EXTRA_CFLAGS="-fprofile-arcs -ftest-coverage"
   matrix:
     - TEST_PHP_ARGS="-q --show-diff -dopcache.enable_cli=0"
     - TEST_PHP_ARGS="-q --show-diff -dopcache.enable_cli=1 -dopcache.optimization_level=0x7FFEBFFF"
@@ -34,7 +37,10 @@ script:
   - phpize
   - wget -q -O run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
   - ./configure --enable-componere-coverage
-  - make componere-test-coverage
+  - make
+  - make install
+  - echo "extension=componere.so" > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/componere.ini
+  - php run-tests.php tests
 
 after_success:
   - coveralls -b $TRAVIS_BUILD_DIR -E Zend --gcov-options '\-lp'
