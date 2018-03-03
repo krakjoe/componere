@@ -3,6 +3,7 @@ componere
 *composing classes at runtime since 2018*
 
 [![Build Status](https://travis-ci.org/krakjoe/componere.svg?branch=master)](https://travis-ci.org/krakjoe/componere)
+[![Coverage Status](https://coveralls.io/repos/github/krakjoe/componere/badge.svg?branch=develop)](https://coveralls.io/github/krakjoe/componere?branch=develop)
 
 This extension allows the composition and re-composition of classes at runtime.
 

@@ -34,4 +34,4 @@ script:
   - make componere-test-coverage
 
 after_success:
-  - coveralls --exclude Zend --gcov-options '\-lp'
+  - coveralls -b $TRAVIS_BUILD_DIR -E Zend --gcov-options '\-lp'
