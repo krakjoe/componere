@@ -31,6 +31,7 @@ script:
   - wget -q -O run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
   - ./configure --enable-componere-coverage
   - make comnponere-test-coverage
+  - make install
   - php run-tests.php -P tests
 
 after_success:
