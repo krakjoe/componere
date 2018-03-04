@@ -16,7 +16,13 @@ env:
     - REPORT_EXIT_STATUS=1
   matrix:
     - TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=0"
+    - TEST_PHP_ARGS="-q --show-diff -m --show-mem -d opcache.enable_cli=0"
     - TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=1 -d opcache.optimization_level=0x7FFEBFFF"
+
+matrix:
+  allow_failures:
+    - php: nightly
+      env: TEST_PHP_ARGS="-q --show-diff -m --show-mem -d opcache.enable_cli=0"
 
 before_install:
   - pip install --user cpp-coveralls
