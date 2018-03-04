@@ -58,6 +58,8 @@ static inline void php_componere_patch_destroy(zend_object *zo) {
 
 		Z_OBJCE(o->instance) = o->saved;
 
+		php_componere_destroy_class(o->saved);
+
 		zval_ptr_dtor(&o->instance);
 	}
 
@@ -96,6 +98,7 @@ PHP_METHOD(Patch, __construct)
 		return;
 	}
 
+
 	pce = Z_OBJCE_P(pd);
 
 	o->ce->type = ZEND_USER_CLASS;
@@ -108,6 +111,7 @@ PHP_METHOD(Patch, __construct)
 
 	o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 	o->saved = pce;
+	o->saved->refcount++;
 
 	ZVAL_COPY(&o->instance, pd);
 

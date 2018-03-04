@@ -36,6 +36,7 @@ typedef struct _php_componere_definition_t {
 		((char*) o - XtOffsetOf(php_componere_definition_t, std)))
 #define php_componere_definition_fetch(z) php_componere_definition_from(Z_OBJ_P(z))
 
+extern void php_componere_definition_inherit(zend_class_entry *ce, zend_class_entry *parent);
 extern void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent);
 extern void php_componere_definition_parent(zend_class_entry *ce, zend_class_entry *parent);
 

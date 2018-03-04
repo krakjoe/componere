@@ -194,6 +194,18 @@ inline void php_componere_definition_parent(zend_class_entry *ce, zend_class_ent
 	} while ((*pce));
 }
 
+inline void php_componere_definition_inherit(zend_class_entry *ce, zend_class_entry *parent) {
+	zend_bool is_final = parent->ce_flags & ZEND_ACC_FINAL;
+
+	parent->ce_flags &= ~ ZEND_ACC_FINAL;
+
+	zend_do_inheritance(ce, parent);
+
+	if (is_final) {
+		parent->ce_flags |= ZEND_ACC_FINAL;
+	}
+}
+
 inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
 {
 	zend_class_entry* pair[2] = {ce, parent};
@@ -379,7 +391,7 @@ PHP_METHOD(Definition, __construct)
 		o->saved = pce;
 		o->saved->refcount++;
 	} else if(pce) {
-		zend_do_inheritance(o->ce, pce);
+		php_componere_definition_inherit(o->ce, pce);
 	}
 
 	if (pce) {
