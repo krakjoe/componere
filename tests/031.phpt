@@ -1,5 +1,5 @@
 --TEST--
-Disallow patching objects of an internal class
+Allow patching objects of an internal class
 --FILE--
 <?php
 use Componere\Patch;
@@ -7,12 +7,14 @@ use Componere\Method;
 
 $instance = new DateTime();
 
-$a = new Patch($instance);
+$p = new Patch($instance);
+$p->addMethod("__toString", new Method(function(){
+	return "ok";
+}));
+$p->apply();
+
+echo (string) $instance;
 ?>
---EXPECTF--
-Fatal error: Uncaught InvalidArgumentException: cannot patch internal objects in %s:7
-Stack trace:
-#0 %s(7): Componere\Patch->__construct(Object(DateTime))
-#1 {main}
-  thrown in %s on line 7
+--EXPECT--
+ok
 

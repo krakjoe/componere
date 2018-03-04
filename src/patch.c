@@ -93,12 +93,6 @@ PHP_METHOD(Patch, __construct)
 			return;
 	}
 
-	if (Z_OBJCE_P(pd)->type != ZEND_USER_CLASS) {
-		php_componere_throw_ex(InvalidArgumentException, "cannot patch internal objects");
-		return;
-	}
-
-
 	pce = Z_OBJCE_P(pd);
 
 	o->ce->type = ZEND_USER_CLASS;
@@ -106,7 +100,12 @@ PHP_METHOD(Patch, __construct)
 
 	zend_initialize_class_data(o->ce, 1);
 
-	php_componere_definition_copy(o->ce, pce);
+	if (pce->type == ZEND_USER_CLASS) {
+		php_componere_definition_copy(o->ce, pce);
+	} else {
+		php_componere_definition_inherit(o->ce, pce);
+	}
+
 	php_componere_definition_parent(o->ce, pce);
 
 	o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
@@ -227,6 +226,47 @@ PHP_METHOD(Patch, isApplied)
 	RETURN_BOOL(Z_OBJCE(o->instance) == o->ce);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(php_componere_patch_derive, 0, 0, 1)
+	ZEND_ARG_INFO(0, object)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Patch, derive)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+	php_componere_definition_t *r;
+	zval *instance;
+
+	if (php_componere_parse_parameters("o", &instance) != SUCCESS) {
+		php_componere_wrong_parameters("object expected");
+		return;
+	}
+
+	if (!instanceof_function(Z_OBJCE_P(instance), o->saved)) {
+		php_componere_throw_ex(InvalidArgumentException, 
+			"%s is not compatible with %s",
+			ZSTR_VAL(o->saved->name),
+			ZSTR_VAL(Z_OBJCE_P(instance)->name));
+		return;
+	}
+
+	object_init_ex(return_value, php_componere_patch_ce);
+
+	r = php_componere_definition_fetch(return_value);
+
+	r->ce->type = ZEND_USER_CLASS;
+	r->ce->name = zend_string_copy(o->ce->name);
+	
+	zend_initialize_class_data(r->ce, 1);
+
+	php_componere_definition_copy(r->ce, o->ce);
+	php_componere_definition_parent(r->ce, o->ce);
+
+	r->saved = Z_OBJCE_P(instance);
+	r->saved->refcount++;
+
+	ZVAL_COPY(&r->instance, instance);
+}
+
 static zend_function_entry php_componere_patch_methods[] = {
 	PHP_ME(Patch, __construct, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, getClosure, php_componere_patch_closure, ZEND_ACC_PUBLIC)
@@ -234,6 +274,7 @@ static zend_function_entry php_componere_patch_methods[] = {
 	PHP_ME(Patch, apply, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, revert, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, isApplied, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, derive, php_componere_patch_derive, ZEND_ACC_PUBLIC)
 	PHP_FE_END
 };
 

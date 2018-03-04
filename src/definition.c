@@ -209,7 +209,7 @@ inline void php_componere_definition_inherit(zend_class_entry *ce, zend_class_en
 inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
 {
 	zend_class_entry* pair[2] = {ce, parent};
-
+	
 	if (parent->num_interfaces) {
 		ce->interfaces = (zend_class_entry **) 
 			ecalloc(parent->num_interfaces, sizeof(zend_class_entry*));
@@ -361,40 +361,33 @@ PHP_METHOD(Definition, __construct)
 
 	zend_initialize_class_data(o->ce, 1);
 
-	if (!parent) {
-		pce = zend_lookup_class(name);
-	} else {
-		pce = zend_lookup_class(parent);
-	}
+	if (pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name)) {
+		if (zend_string_equals_ci(o->ce->name, pce->name)) {
+			if (pce->type != ZEND_USER_CLASS) {
+				php_componere_throw_ex(InvalidArgumentException,
+					"cannot redeclare internal class %s", ZSTR_VAL(pce->name));
+				return;
+			}
 
-	if (pce && zend_string_equals_ci(o->ce->name, pce->name)) {
-		if (pce->type != ZEND_USER_CLASS) {
-			php_componere_throw_ex(InvalidArgumentException,
-				"cannot redeclare internal class %s", ZSTR_VAL(pce->name));
-			return;
+			if (pce->ce_flags & ZEND_ACC_INTERFACE) {
+				php_componere_throw_ex(InvalidArgumentException,
+					"cannot redeclare interface %s", ZSTR_VAL(pce->name));
+				return;
+			}
+
+			if (pce->ce_flags & ZEND_ACC_TRAIT) {
+				php_componere_throw_ex(InvalidArgumentException,
+					"cannot redeclare trait %s", ZSTR_VAL(pce->name));
+				return;
+			}
+
+			php_componere_definition_copy(o->ce, pce);
+
+			o->saved = pce;
+			o->saved->refcount++;
+		} else {
+			php_componere_definition_inherit(o->ce, pce);
 		}
-
-		if (pce->ce_flags & ZEND_ACC_INTERFACE) {
-			php_componere_throw_ex(InvalidArgumentException,
-				"cannot redeclare interface %s", ZSTR_VAL(pce->name));
-			return;
-		}
-
-		if (pce->ce_flags & ZEND_ACC_TRAIT) {
-			php_componere_throw_ex(InvalidArgumentException,
-				"cannot redeclare trait %s", ZSTR_VAL(pce->name));
-			return;
-		}
-
-		php_componere_definition_copy(o->ce, pce);
-
-		o->saved = pce;
-		o->saved->refcount++;
-	} else if(pce) {
-		php_componere_definition_inherit(o->ce, pce);
-	}
-
-	if (pce) {
 		php_componere_definition_parent(o->ce, pce);
 	}
 
