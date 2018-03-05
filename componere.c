@@ -19,12 +19,10 @@
 # include "config.h"
 #endif
 
-#include <php.h>
-#include <ext/standard/info.h>
-
+#include "php.h"
+#include "ext/standard/info.h"
 #include "php_componere.h"
 
-#include "src/common.h"
 #include "src/definition.h"
 #include "src/patch.h"
 #include "src/method.h"
@@ -88,28 +86,9 @@ PHP_MINFO_FUNCTION(componere)
 }
 /* }}} */
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_cast_arginfo, 0, 0, 2)
-       ZEND_ARG_INFO(0, class)
-       ZEND_ARG_INFO(0, instance)
-ZEND_END_ARG_INFO()
-
-PHP_FUNCTION(Componere_cast)
-{
-       zend_class_entry *target = NULL;
-       zval *instance = NULL;
-
-       if (php_componere_parse_parameters("Co", &target, &instance) != SUCCESS) {
-               php_componere_wrong_parameters("class and instance expected");
-               return;
-       }
-
-       php_componere_cast(return_value, instance, target);     
-}
-
 /* {{{ componere_functions[]
  */
 static const zend_function_entry componere_functions[] = {
-        ZEND_NS_NAMED_FE("Componere", cast, zif_Componere_cast, php_componere_cast_arginfo)
 	PHP_FE_END
 };
 /* }}} */
