@@ -280,8 +280,9 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 
 	php_componere_definition_magic(ce, parent);
 
+	ce->create_object = parent->create_object;
 	ce->ce_flags |= parent->ce_flags;
-	ce->parent = parent->parent;
+	ce->parent = parent->parent;	
 }
 
 static inline void php_componere_definition_destroy(zend_object *zo) {
@@ -750,6 +751,97 @@ PHP_METHOD(Definition, getReflector)
 		o->ce->name);
 
 	RETURN_ZVAL(&o->reflector, 1, 0);
+}
+
+zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *target) {
+	zend_class_entry *source = Z_OBJCE_P(instance);
+	zend_object *clone;
+
+	if (target->ce_flags & ZEND_ACC_INTERFACE) {
+		php_componere_throw_ex(InvalidArgumentException,
+			"cannot cast to interface %s", 
+			ZSTR_VAL(target->name));
+		return NULL;
+	}
+
+	if (target->ce_flags & ZEND_ACC_TRAIT) {
+		php_componere_throw_ex(InvalidArgumentException,
+			"cannot cast to trait %s", 
+			ZSTR_VAL(target->name));
+		return NULL;
+	}
+
+	if (target->ce_flags & ZEND_ACC_EXPLICIT_ABSTRACT_CLASS) {
+		php_componere_throw_ex(InvalidArgumentException,
+			"cannot cast to abstract %s", 
+			ZSTR_VAL(target->name));
+		return NULL;
+	}
+
+	if (!instanceof_function(target, source) && !instanceof_function(source, target)) {
+		php_componere_throw_ex(InvalidArgumentException, 
+			"%s is not compatible with %s",
+			ZSTR_VAL(target->name),
+			ZSTR_VAL(source->name));
+		return NULL;
+	}
+
+	if (!Z_OBJ_HT_P(instance)->clone_obj || 
+	    !(clone = Z_OBJ_HT_P(instance)->clone_obj(instance))) {
+		php_componere_throw_ex(InvalidArgumentException,
+			"%s does not support cloning",
+			ZSTR_VAL(Z_OBJCE_P(instance)->name));
+	       return NULL;
+	}
+
+	ZVAL_OBJ(return_value, clone);
+	Z_OBJCE_P(return_value) = target;
+
+	if (source->default_properties_count) {
+		zval *slot = Z_OBJ_P(return_value)->properties_table,
+                     *end = slot + source->default_properties_count;
+
+		do {
+			if (Z_REFCOUNTED_P(slot)) {
+				zval_ptr_dtor(slot);
+			}
+			slot++;
+		} while (slot != end);
+	}
+
+	if (Z_OBJ_P(return_value)->properties) {
+		zend_hash_destroy(
+			Z_OBJ_P(return_value)->properties);
+		efree(Z_OBJ_P(return_value)->properties);
+
+		Z_OBJ_P(return_value)->properties = NULL;
+	}
+
+	if (instanceof_function(target, source)) {
+		object_properties_init(Z_OBJ_P(return_value), target);
+	} else {
+		object_properties_init(Z_OBJ_P(return_value), source);
+	}
+
+	{
+		zend_string *k;
+
+		ZEND_HASH_FOREACH_STR_KEY(Z_OBJ_HT_P(instance)->get_properties(instance), k) {
+			zval key;
+
+			ZVAL_STR(&key, k);
+
+			if (Z_OBJ_HT_P(return_value)->has_property(return_value, &key, 2, NULL)) {
+				zval v;
+				zval *val = Z_OBJ_HT_P(instance)
+						->read_property(instance, &key, BP_VAR_R, NULL, &v);
+				
+				Z_OBJ_HT_P(return_value)->write_property(return_value, &key, val, NULL);
+			}
+		} ZEND_HASH_FOREACH_END();
+	}
+
+	return return_value;
 }
 
 static zend_function_entry php_componere_definition_abstract_methods[] = {
