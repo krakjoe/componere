@@ -29,9 +29,9 @@
 
 zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *target) {
 	zend_class_entry *source = Z_OBJCE_P(instance);
-	zend_object *co, *zo;
+	zend_object *co, *zo = Z_OBJ_P(instance);
 
-	if (Z_OBJCE_P(instance)->create_object || target->create_object) {
+	if (source->create_object || target->create_object) {
 		php_componere_throw_ex(InvalidArgumentException,
 			"cannot cast between internal types");
 		return NULL;
@@ -66,7 +66,6 @@ zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *t
 		return NULL;
 	}
 
-	zo = Z_OBJ_P(instance);
 	co = zend_objects_new(target);
 
 	if (co->ce->default_properties_count) {
