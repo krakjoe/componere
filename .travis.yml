@@ -16,16 +16,20 @@ env:
     - REPORT_EXIT_STATUS=1
     - TEST_PHP_CONF="disable-componere-coverage"
     - TEST_PHP_MAKE="test"
+    - TEST_PHP_DEFAULTS="-q --show-diff"
+    - TEST_PHP_VALGRIND="-m --show-mem"
+    - TEST_PHP_OPCACHE_OFF="-d opcache.enable_cli=0"
+    - TEST_PHP_OPCACHE_ON="-d opcache.enable_cli=1 -d opcache.optimization_level=0x7FFEBFFF"
   matrix:
-    - TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=0"
-    - TEST_PHP_ARGS="-q --show-diff -m --show-mem -d opcache.enable_cli=0"
-    - TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=1 -d opcache.optimization_level=0x7FFEBFFF"
-    - TEST_PHP_CONF="enable-componere-coverage" TEST_PHP_MAKE="componere-test-coverage" TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=0"
+    - TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_OFF"
+    - TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_OFF $TEST_PHP_VALGRIND"
+    - TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_ON"
+    - TEST_PHP_CONF="enable-componere-coverage" TEST_PHP_MAKE="componere-test-coverage" TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_OFF"
 
 matrix:
   allow_failures:
     - php: nightly
-      env: TEST_PHP_ARGS="-q --show-diff -m --show-mem -d opcache.enable_cli=0"
+      env: TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_OFF $TEST_PHP_VALGRIND"
 
 before_install:
   - pip install --user cpp-coveralls
