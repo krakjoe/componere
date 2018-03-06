@@ -27,58 +27,11 @@
 
 #include "src/common.h"
 
-static inline zend_object* php_componere_cast_realloc(zend_object *clone, zend_class_entry *source, zend_class_entry *target) {
-	if (source->default_properties_count) {
-		zval *slot = clone->properties_table,
-                     *end = slot + source->default_properties_count;
-
-		do {
-			if (Z_REFCOUNTED_P(slot)) {
-				zval_ptr_dtor(slot);
-			}
-			slot++;
-		} while (slot != end);
-	}
-
-	clone = (zend_object*) erealloc(clone, sizeof(zend_object) + zend_object_properties_size(target));
-
-	if (target->default_properties_count) {
-		zval *src = target->default_properties_table;
-		zval *dst = clone->properties_table;
-		zval *end = src + target->default_properties_count;
-
-		do {
-			ZVAL_COPY(dst, src);
-			src++;
-			dst++;
-		} while (src != end);
-	}
-
-	if (clone->properties) {
-		if (!(GC_FLAGS(clone->properties) & IS_ARRAY_IMMUTABLE)) {
-#if PHP_VERSION_ID >= 70300
-			if (GC_DELREF(clone->properties) == 0) {
-#else
-			if (--GC_REFCOUNT(clone->properties) == 0) {
-
-#endif
-				zend_array_destroy(clone->properties);
-			}
-		}
-
-		clone->properties = NULL;
-	}
-
-	clone->ce = target;
-
-	return clone;
-}
-
 zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *target) {
 	zend_class_entry *source = Z_OBJCE_P(instance);
-	zend_object *clone;
+	zend_object *co, *zo;
 
-	if (Z_OBJ_HT_P(instance) != zend_get_std_object_handlers() || target->type == ZEND_INTERNAL_CLASS) {
+	if (Z_OBJCE_P(instance)->create_object || target->create_object) {
 		php_componere_throw_ex(InvalidArgumentException,
 			"cannot cast between internal types");
 		return NULL;
@@ -113,26 +66,26 @@ zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *t
 		return NULL;
 	}
 
-	ZVAL_OBJ(return_value, 
-		php_componere_cast_realloc(
-			Z_OBJ_HT_P(instance)->clone_obj(instance), source, target));
-	{
-		zend_string *k;
+	zo = Z_OBJ_P(instance);
+	co = zend_objects_new(target);
 
-		ZEND_HASH_FOREACH_STR_KEY(Z_OBJ_HT_P(instance)->get_properties(instance), k) {
-			zval key;
+	if (co->ce->default_properties_count) {
+		int slot = 0, end = co->ce->default_properties_count;
 
-			ZVAL_STR(&key, k);
-
-			if (Z_OBJ_HT_P(return_value)->has_property(return_value, &key, 2, NULL)) {
-				zval v;
-				zval *val = Z_OBJ_HT_P(instance)
-						->read_property(instance, &key, BP_VAR_R, NULL, &v);
-				
-				Z_OBJ_HT_P(return_value)->write_property(return_value, &key, val, NULL);
+		do {
+			if (slot < zo->ce->default_properties_count) {
+				ZVAL_COPY(
+					&co->properties_table[slot], 
+					&zo->properties_table[slot]);
+			} else {
+				ZVAL_COPY(&co->properties_table[slot],
+					  &co->ce->default_properties_table[slot]);
 			}
-		} ZEND_HASH_FOREACH_END();
+			slot++;
+		} while (slot < end);
 	}
+
+	ZVAL_OBJ(return_value, co);
 
 	return return_value;
 }
