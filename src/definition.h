@@ -39,6 +39,4 @@ typedef struct _php_componere_definition_t {
 extern void php_componere_definition_inherit(zend_class_entry *ce, zend_class_entry *parent);
 extern void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent);
 extern void php_componere_definition_parent(zend_class_entry *ce, zend_class_entry *parent);
-
-extern zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *target);
 #endif

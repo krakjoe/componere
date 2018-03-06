@@ -18,5 +18,5 @@
 #ifndef HAVE_COMPONERE_CAST_H
 #define HAVE_COMPONERE_CAST_H
 
-extern zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *target);
+extern zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *target, zend_bool references);
 #endif

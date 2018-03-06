@@ -104,7 +104,8 @@ PHP_FUNCTION(Componere_cast)
                return;
        }
 
-       php_componere_cast(return_value, instance, target);     
+       php_componere_cast(return_value, instance, target, 
+		php_componere_called_by_reference(execute_data));     
 }
 
 /* {{{ componere_functions[]

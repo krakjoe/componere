@@ -27,7 +27,7 @@
 
 #include "src/common.h"
 
-zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *target) {
+zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *target, zend_bool references) {
 	zend_class_entry *source = Z_OBJCE_P(instance);
 	zend_object *co, *zo = Z_OBJ_P(instance);
 
@@ -73,6 +73,10 @@ zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *t
 
 		do {
 			if (slot < zo->ce->default_properties_count) {
+				if (references && !Z_ISREF(zo->properties_table[slot])) {
+					ZVAL_MAKE_REF(&zo->properties_table[slot]);
+				}
+
 				ZVAL_COPY(
 					&co->properties_table[slot], 
 					&zo->properties_table[slot]);
