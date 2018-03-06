@@ -1,7 +1,7 @@
 Componere
 =========
 
-[![Build Status](https://travis-ci.org/krakjoe/componere.svg?branch=master)](https://travis-ci.org/krakjoe/componere)
+[![Build Status](https://travis-ci.org/krakjoe/componere.svg?branch=develop)](https://travis-ci.org/krakjoe/componere)
 [![Coverage Status](https://coveralls.io/repos/github/krakjoe/componere/badge.svg?branch=develop)](https://coveralls.io/github/krakjoe/componere?branch=develop)
 
 Documentation
