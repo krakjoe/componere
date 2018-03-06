@@ -42,4 +42,4 @@ script:
   - make $TEST_PHP_MAKE
 
 after_success:
-  - if [ $TEST_PHP_CONF == "enable-componere-coverage" ]; then coveralls -b $TRAVIS_BUILD_DIR -E Zend --gcov-options '\-lp fi'
+  - test $TEST_PHP_CONF != "enable-componere-coverage" || coveralls -b $TRAVIS_BUILD_DIR -E Zend --gcov-options '\-lp'
