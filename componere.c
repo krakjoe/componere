@@ -90,34 +90,34 @@ PHP_MINFO_FUNCTION(componere)
 /* }}} */
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_cast_arginfo, 0, 0, 2)
-       ZEND_ARG_INFO(0, class)
-       ZEND_ARG_INFO(0, instance)
+       ZEND_ARG_INFO(0, Type)
+       ZEND_ARG_INFO(0, object)
 ZEND_END_ARG_INFO()
 
 PHP_FUNCTION(Componere_cast)
 {
        zend_class_entry *target = NULL;
-       zval *instance = NULL;
+       zval *object = NULL;
 
-       if (php_componere_parse_parameters("Co", &target, &instance) != SUCCESS) {
-               php_componere_wrong_parameters("class and instance expected");
+       if (php_componere_parse_parameters("Co", &target, &object) != SUCCESS) {
+               php_componere_wrong_parameters("Type and object expected");
                return;
        }
 
-       php_componere_cast(return_value, instance, target, 0);     
+       php_componere_cast(return_value, object, target, 0);
 }
 
 PHP_FUNCTION(Componere_cast_by_ref)
 {
        zend_class_entry *target = NULL;
-       zval *instance = NULL;
+       zval *object = NULL;
 
-       if (php_componere_parse_parameters("Co", &target, &instance) != SUCCESS) {
-               php_componere_wrong_parameters("class and instance expected");
+       if (php_componere_parse_parameters("Co", &target, &object) != SUCCESS) {
+               php_componere_wrong_parameters("Type and object expected");
                return;
        }
 
-       php_componere_cast(return_value, instance, target, 1);     
+       php_componere_cast(return_value, object, target, 1);
 }
 
 /* {{{ componere_functions[]
