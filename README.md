@@ -1,4 +1,4 @@
-componere
+Componere
 =========
 
 [![Build Status](https://travis-ci.org/krakjoe/componere.svg?branch=master)](https://travis-ci.org/krakjoe/componere)
