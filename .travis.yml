@@ -15,7 +15,7 @@ env:
   global:
     - REPORT_EXIT_STATUS=1
     - CONF="disable-componere-coverage"
-    - RULE="test"
+    - RULE="all"
     - DEF="-q --show-diff"
     - MEMCHECK="-m --show-mem"
   matrix:
