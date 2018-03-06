@@ -127,10 +127,6 @@ static inline void php_componere_setup_handlers(
 	handlers->offset = offset;
 }
 
-static inline zend_bool php_componere_called_by_reference(zend_execute_data *execute_data) {
-	return (EX(prev_execute_data)->opline + 1)->opcode == ZEND_ASSIGN_REF;
-}
-
 ZEND_BEGIN_ARG_INFO(php_componere_no_arginfo, 0)
 ZEND_END_ARG_INFO()
 #endif

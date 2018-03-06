@@ -104,14 +104,27 @@ PHP_FUNCTION(Componere_cast)
                return;
        }
 
-       php_componere_cast(return_value, instance, target, 
-		php_componere_called_by_reference(execute_data));     
+       php_componere_cast(return_value, instance, target, 0);     
+}
+
+PHP_FUNCTION(Componere_cast_by_reference)
+{
+       zend_class_entry *target = NULL;
+       zval *instance = NULL;
+
+       if (php_componere_parse_parameters("Co", &target, &instance) != SUCCESS) {
+               php_componere_wrong_parameters("class and instance expected");
+               return;
+       }
+
+       php_componere_cast(return_value, instance, target, 1);     
 }
 
 /* {{{ componere_functions[]
  */
 static const zend_function_entry componere_functions[] = {
         ZEND_NS_NAMED_FE("Componere", cast, zif_Componere_cast, php_componere_cast_arginfo)
+        ZEND_NS_NAMED_FE("Componere", cast_by_reference, zif_Componere_cast_by_reference, php_componere_cast_arginfo)
 	PHP_FE_END
 };
 /* }}} */

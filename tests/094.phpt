@@ -1,10 +1,8 @@
 --TEST--
-Componere\cast by reference
---INI--
-error_reporting=E_ALL &~ E_NOTICE
+Componere\cast_by_reference
 --FILE--
 <?php
-use function Componere\cast;
+use function Componere\cast_by_reference as cast;
 
 class Base {
 	public $std;
@@ -16,38 +14,19 @@ class Child extends Base {
 
 $base = new Base;
 
-$child = &cast(Child::class, $base);
-
-var_dump($base);
-$child->std = new stdClass;
-var_dump($base);
-
-$base = new Base;
-
 $child = cast(Child::class, $base);
 
-var_dump($base);
 $child->std = new stdClass;
+
 var_dump($base);
 ?>
 --EXPECT--
 object(Base)#1 (1) {
   ["std"]=>
-  &NULL
-}
-object(Base)#1 (1) {
-  ["std"]=>
   &object(stdClass)#3 (0) {
   }
 }
-object(Base)#4 (1) {
-  ["std"]=>
-  NULL
-}
-object(Base)#4 (1) {
-  ["std"]=>
-  NULL
-}
+
 
 
 
