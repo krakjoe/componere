@@ -5,5 +5,5 @@ if (PHP_COMPONERE != 'no') {
 
 	EXTENSION('componere', 'componere.c', null, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
 
-	ADD_SOURCES(configure_module_dirname + "/src", "definition.c patch.c method.c reflection.c value.c", "componere");
+	ADD_SOURCES(configure_module_dirname + "/src", "cast.c definition.c patch.c method.c reflection.c value.c", "componere");
 }

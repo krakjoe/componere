@@ -25,6 +25,7 @@
 #include "php_componere.h"
 
 #include "src/common.h"
+#include "src/cast.h"
 #include "src/definition.h"
 #include "src/patch.h"
 #include "src/method.h"
