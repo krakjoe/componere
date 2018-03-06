@@ -22,7 +22,7 @@ env:
     - OPCACHE=0 TEST_PHP_ARGS="$DEF"
     - OPCACHE=1 TEST_PHP_ARGS="$DEF"
     - OPCACHE=0 TEST_PHP_ARGS="$DEF $MEMCHECK"
-    - OPCACHE=0 TEST_PHP_ARGS="$DEF" CONF="enable-componere-coverage" RULE="componere-test-coverage"
+    - OPCACHE=0 TEST_PHP_ARGS="$DEF" CONF="enable-componere-coverage" RULE="componere-test-coverage-travis"
 
 matrix:
   allow_failures:
