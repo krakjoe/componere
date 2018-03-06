@@ -32,7 +32,7 @@ matrix:
       env: TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_OFF $TEST_PHP_VALGRIND"
 
 before_install:
-  - pip install --user cpp-coveralls
+  - test $TEST_PHP_CONF != "enable-componere-coverage" || pip install --user cpp-coveralls
 
 before_script:
   - echo "variables_order=EGPCS" >> $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/php.ini
