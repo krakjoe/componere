@@ -14,10 +14,13 @@ php:
 env:
   global:
     - REPORT_EXIT_STATUS=1
+    - TEST_PHP_CONF="disable-componere-coverage"
+    - TEST_PHP_MAKE="test"
   matrix:
     - TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=0"
     - TEST_PHP_ARGS="-q --show-diff -m --show-mem -d opcache.enable_cli=0"
     - TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=1 -d opcache.optimization_level=0x7FFEBFFF"
+    - TEST_PHP_CONF="enable-componere-coverage" TEST_PHP_MAKE="componere-test-coverage" TEST_PHP_ARGS="-q --show-diff -d opcache.enable_cli=0"
 
 matrix:
   allow_failures:
@@ -35,10 +38,8 @@ before_script:
 script:
   - phpize
   - wget -q -O run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
-  - ./configure --enable-componere-coverage
-  - make componere-test-coverage-travis
-  - make install
-  - php run-tests.php -P tests
+  - ./configure --$TEST_PHP_CONF
+  - make $TEST_PHP_MAKE
 
 after_success:
-  - coveralls -b $TRAVIS_BUILD_DIR -E Zend --gcov-options '\-lp'
+  - if [ $TEST_PHP_CONF == "enable-componere-coverage" ]; then coveralls -b $TRAVIS_BUILD_DIR -E Zend --gcov-options '\-lp fi'
