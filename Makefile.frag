@@ -8,4 +8,4 @@ componere-test-coverage-html: componere-test-coverage-lcov
 	genhtml $(top_srcdir)/coverage.info --output-directory=$(top_srcdir)/html
 
 componere-test-coverage-travis:
-	CCACHE_DISABLE=1 EXTRA_CFLAGS="-fprofile-arcs -ftest-coverage" $(MAKE) clean all
+	CCACHE_DISABLE=1 EXTRA_CFLAGS="-fprofile-arcs -ftest-coverage" $(MAKE)

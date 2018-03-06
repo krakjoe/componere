@@ -14,36 +14,38 @@ php:
 env:
   global:
     - REPORT_EXIT_STATUS=1
-    - TEST_PHP_CONF="disable-componere-coverage"
-    - TEST_PHP_MAKE="test"
-    - TEST_PHP_DEFAULTS="-q --show-diff"
-    - TEST_PHP_VALGRIND="-m --show-mem"
-    - TEST_PHP_OPCACHE_OFF="-d opcache.enable_cli=0"
-    - TEST_PHP_OPCACHE_ON="-d opcache.enable_cli=1 -d opcache.optimization_level=0x7FFEBFFF"
+    - CONF="disable-componere-coverage"
+    - RULE="test"
+    - DEF="-q --show-diff"
+    - MEMCHECK="-m --show-mem"
   matrix:
-    - TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_OFF"
-    - TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_OFF $TEST_PHP_VALGRIND"
-    - TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_ON"
-    - TEST_PHP_CONF="enable-componere-coverage" TEST_PHP_MAKE="componere-test-coverage" TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_OFF"
+    - OPCACHE=0 TEST_PHP_ARGS="$DEF"
+    - OPCACHE=1 TEST_PHP_ARGS="$DEF"
+    - OPCACHE=0 TEST_PHP_ARGS="$DEF $MEMCHECK"
+    - OPCACHE=0 TEST_PHP_ARGS="$DEF" CONF="enable-componere-coverage" RULE="componere-test-coverage"
 
 matrix:
   allow_failures:
     - php: nightly
-      env: TEST_PHP_ARGS="$TEST_PHP_DEFAULTS $TEST_PHP_OPCACHE_OFF $TEST_PHP_VALGRIND"
+      env: OPCACHE=0 TEST_PHP_ARGS="$DEF $MEMCHECK"
 
 before_install:
-  - test $TEST_PHP_CONF != "enable-componere-coverage" || pip install --user cpp-coveralls
+  - test $CONF != "enable-componere-coverage" || pip install --user cpp-coveralls
 
 before_script:
-  - echo "variables_order=EGPCS" >> $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/php.ini
-  - echo                          > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/xdebug.ini
-  - echo "extension=componere.so" > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/componere.ini
+  - echo "variables_order=EGPCS"                 >> $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/php.ini
+  - echo                                          > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/xdebug.ini
+  - echo "extension=componere.so"                 > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/componere.ini
+  - echo "opcache.enable_cli=$OPCACHE"            > $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/opcache.ini
+  - echo "opcache.optimization_level=0x7FFEBFFF" >> $HOME/.phpenv/versions/$TRAVIS_PHP_VERSION/etc/conf.d/opcache.ini
 
 script:
   - phpize
   - wget -q -O run-tests.php https://raw.githubusercontent.com/php/php-src/master/run-tests.php
-  - ./configure --$TEST_PHP_CONF
-  - make $TEST_PHP_MAKE
+  - ./configure --$CONF
+  - make $RULE
+  - make install
+  - php run-tests.php -P
 
 after_success:
-  - test $TEST_PHP_CONF != "enable-componere-coverage" || coveralls -b $TRAVIS_BUILD_DIR -E Zend --gcov-options '\-lp'
+  - test $CONF != "enable-componere-coverage" || coveralls -b $TRAVIS_BUILD_DIR -E Zend --gcov-options '\-lp'
