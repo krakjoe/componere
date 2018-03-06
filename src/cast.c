@@ -18,6 +18,10 @@
 #ifndef HAVE_COMPONERE_CAST
 #define HAVE_COMPONERE_CAST
 
+#ifdef HAVE_CONFIG_H
+#	include "config.h"
+#endif
+
 #include <php.h>
 #include <zend_interfaces.h>
 
