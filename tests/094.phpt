@@ -1,8 +1,8 @@
 --TEST--
-Componere\cast_by_reference
+Componere\cast_by_ref
 --FILE--
 <?php
-use function Componere\cast_by_reference as cast;
+use function Componere\cast_by_ref as cast;
 
 class Base {
 	public $std;

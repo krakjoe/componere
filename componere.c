@@ -107,7 +107,7 @@ PHP_FUNCTION(Componere_cast)
        php_componere_cast(return_value, instance, target, 0);     
 }
 
-PHP_FUNCTION(Componere_cast_by_reference)
+PHP_FUNCTION(Componere_cast_by_ref)
 {
        zend_class_entry *target = NULL;
        zval *instance = NULL;
@@ -124,7 +124,7 @@ PHP_FUNCTION(Componere_cast_by_reference)
  */
 static const zend_function_entry componere_functions[] = {
         ZEND_NS_NAMED_FE("Componere", cast, zif_Componere_cast, php_componere_cast_arginfo)
-        ZEND_NS_NAMED_FE("Componere", cast_by_reference, zif_Componere_cast_by_reference, php_componere_cast_arginfo)
+        ZEND_NS_NAMED_FE("Componere", cast_by_ref, zif_Componere_cast_by_ref, php_componere_cast_arginfo)
 	PHP_FE_END
 };
 /* }}} */
