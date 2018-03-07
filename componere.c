@@ -19,10 +19,13 @@
 # include "config.h"
 #endif
 
-#include "php.h"
-#include "ext/standard/info.h"
+#include <php.h>
+#include <ext/standard/info.h>
+
 #include "php_componere.h"
 
+#include "src/common.h"
+#include "src/cast.h"
 #include "src/definition.h"
 #include "src/patch.h"
 #include "src/method.h"
@@ -86,9 +89,42 @@ PHP_MINFO_FUNCTION(componere)
 }
 /* }}} */
 
+ZEND_BEGIN_ARG_INFO_EX(php_componere_cast_arginfo, 0, 0, 2)
+       ZEND_ARG_INFO(0, Type)
+       ZEND_ARG_INFO(0, object)
+ZEND_END_ARG_INFO()
+
+PHP_FUNCTION(Componere_cast)
+{
+       zend_class_entry *target = NULL;
+       zval *object = NULL;
+
+       if (php_componere_parse_parameters("Co", &target, &object) != SUCCESS) {
+               php_componere_wrong_parameters("Type and object expected");
+               return;
+       }
+
+       php_componere_cast(return_value, object, target, 0);
+}
+
+PHP_FUNCTION(Componere_cast_by_ref)
+{
+       zend_class_entry *target = NULL;
+       zval *object = NULL;
+
+       if (php_componere_parse_parameters("Co", &target, &object) != SUCCESS) {
+               php_componere_wrong_parameters("Type and object expected");
+               return;
+       }
+
+       php_componere_cast(return_value, object, target, 1);
+}
+
 /* {{{ componere_functions[]
  */
 static const zend_function_entry componere_functions[] = {
+        ZEND_NS_NAMED_FE("Componere", cast, zif_Componere_cast, php_componere_cast_arginfo)
+        ZEND_NS_NAMED_FE("Componere", cast_by_ref, zif_Componere_cast_by_ref, php_componere_cast_arginfo)
 	PHP_FE_END
 };
 /* }}} */

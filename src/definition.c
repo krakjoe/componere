@@ -280,8 +280,9 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 
 	php_componere_definition_magic(ce, parent);
 
+	ce->create_object = parent->create_object;
 	ce->ce_flags |= parent->ce_flags;
-	ce->parent = parent->parent;
+	ce->parent = parent->parent;	
 }
 
 static inline void php_componere_definition_destroy(zend_object *zo) {
