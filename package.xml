@@ -146,6 +146,14 @@
     <file name="084.phpt" role="test" />
     <file name="085.phpt" role="test" />
     <file name="086.phpt" role="test" />
+    <file name="087.phpt" role="test" />
+    <file name="088.phpt" role="test" />
+    <file name="089.phpt" role="test" />
+    <file name="090.phpt" role="test" />
+    <file name="091.phpt" role="test" />
+    <file name="092.phpt" role="test" />
+    <file name="093.phpt" role="test" />
+    <file name="094.phpt" role="test" />
    </dir> <!-- tests -->
   </dir>
  </contents>
