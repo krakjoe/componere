@@ -29,11 +29,11 @@
 #include <zend_exceptions.h>
 #include <zend_inheritance.h>
 
-#include "src/common.h"
-#include "src/reflection.h"
-#include "src/definition.h"
-#include "src/method.h"
-#include "src/value.h"
+#include <src/common.h>
+#include <src/reflection.h>
+#include <src/definition.h>
+#include <src/method.h>
+#include <src/value.h>
 
 zend_class_entry *php_componere_definition_abstract_ce;
 zend_class_entry *php_componere_definition_ce;

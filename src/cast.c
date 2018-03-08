@@ -25,7 +25,7 @@
 #include <php.h>
 #include <zend_interfaces.h>
 
-#include "src/common.h"
+#include <src/common.h>
 
 zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *target, zend_bool references) {
 	zend_class_entry *source = Z_OBJCE_P(instance);
@@ -86,6 +86,31 @@ zval* php_componere_cast(zval *return_value, zval *instance, zend_class_entry *t
 			}
 			slot++;
 		} while (slot < end);
+	}
+
+	if (zo->properties && instanceof_function(target, source)) {
+		zend_string *key;
+		zval *val;
+
+		ZEND_HASH_FOREACH_STR_KEY_VAL(zo->properties, key, val) {
+			zend_property_info *info = 
+				zend_hash_find_ptr(
+					&co->ce->properties_info, key);
+
+			if (!info || info->flags & ZEND_ACC_STATIC) {
+				continue;
+			}
+
+			if (Z_TYPE_P(val) == IS_INDIRECT) {
+				val = Z_INDIRECT_P(val);
+			}
+
+			if (references && !Z_ISREF_P(val)) {
+				ZVAL_MAKE_REF(val);
+			}
+
+			ZVAL_COPY(OBJ_PROP(co, info->offset), val);
+		} ZEND_HASH_FOREACH_END();
 	}
 
 	ZVAL_OBJ(return_value, co);

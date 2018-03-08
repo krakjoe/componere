@@ -27,9 +27,9 @@
 #include <zend_exceptions.h>
 #include <ext/spl/spl_exceptions.h>
 
-#include "src/common.h"
-#include "src/reflection.h"
-#include "src/method.h"
+#include <src/common.h>
+#include <src/reflection.h>
+#include <src/method.h>
 
 zend_class_entry *php_componere_method_ce;
 zend_object_handlers php_componere_method_handlers;

@@ -24,13 +24,13 @@
 
 #include "php_componere.h"
 
-#include "src/common.h"
-#include "src/cast.h"
-#include "src/definition.h"
-#include "src/patch.h"
-#include "src/method.h"
-#include "src/reflection.h"
-#include "src/value.h"
+#include <src/common.h>
+#include <src/cast.h>
+#include <src/definition.h>
+#include <src/patch.h>
+#include <src/method.h>
+#include <src/reflection.h>
+#include <src/value.h>
 
 static inline void php_componere_optimizer_adjust()
 {
