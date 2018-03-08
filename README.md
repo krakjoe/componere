@@ -1,8 +1,8 @@
 Componere
 =========
 
-[![Build Status](https://travis-ci.org/krakjoe/componere.svg?branch=master)](https://travis-ci.org/krakjoe/componere)
-[![Coverage Status](https://coveralls.io/repos/github/krakjoe/componere/badge.svg?branch=master)](https://coveralls.io/github/krakjoe/componere?branch=master)
+[![Build Status](https://travis-ci.org/krakjoe/componere.svg?branch=release)](https://travis-ci.org/krakjoe/componere)
+[![Coverage Status](https://coveralls.io/repos/github/krakjoe/componere/badge.svg?branch=release)](https://coveralls.io/github/krakjoe/componere?branch=release)
 
 Documentation
 =============
