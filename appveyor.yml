@@ -108,17 +108,13 @@ build_script:
                         move c:\build-cache\$dname0 c:\build-cache\$dname1
                 }
                 cd c:\projects\componere
-                $env:PATH = 'c:\build-cache\' + $dname1 + ';' + $env:PATHs
+                $env:PATH = 'c:\build-cache\' + $dname1 + ';' + $env:PATH
+                #echo "@echo off" | Out-File -Encoding "ASCII" task.bat
+                #echo "" | Out-File -Encoding "ASCII" -Append task.bat
                 echo "" | Out-File -Encoding "ASCII" task.bat
                 echo "call phpize 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
-                echo "call configure --prefix=C:\projects\componere\php --enable-componere=shared --enable-debug-pack 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "call configure --enable-componere --enable-debug-pack 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
                 echo "nmake /nologo 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
-                echo "nmake install /nologo 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
-                echo "echo [PHP] > C:\projects\componere\php\php.ini" | Out-File -Encoding "ASCII" -Append task.bat
-                echo "echo extension_dir=ext >> C:\projects\componere\php\php.ini" | Out-File -Encoding "ASCII" -Append task.bat
-                echo "echo extension=php_componere.dll >> C:\projects\componere\php\php.ini" | Out-File -Encoding "ASCII" -Append task.bat
-                echo "echo zend_extension=php_opcache.dll >> C:\projects\componere\php\php.ini" | Out-File -Encoding "ASCII" -Append task.bat
-                echo "echo opcache.optimization_level=0x7FFEBFFF >> C:\projects\componere\php\php.ini" | Out-File -Encoding "ASCII" -Append task.bat
                 echo "exit %errorlevel%" | Out-File -Encoding "ASCII" -Append task.bat
                 $here = (Get-Item -Path "." -Verbose).FullName
                 $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
@@ -155,8 +151,10 @@ test_script:
                 cd c:\projects\componere
                 echo "" | Out-File -Encoding "ASCII" task.bat
                 echo "set REPORT_EXIT_STATUS=1" | Out-File -Encoding "ASCII" -Append task.bat
-                echo "C:\projects\componere\php\php.exe run-tests.php -P -g FAIL,SKIP --show-diff -d opcache.enable_cli=0 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
-                echo "C:\projects\componere\php\php.exe run-tests.php -P -g FAIL,SKIP --show-diff -d opcache.enable_cli=1 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                $cmd = 'call configure --enable-componere --with-prefix=c:\build-cache\' + $dname + " 2>&1"
+                echo $cmd | Out-File -Encoding "ASCII" -Append task.bat
+                echo "nmake /nologo test TESTS=-q --show-diff 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "nmake /nologo test TESTS=\"-q --show-diff -d zend_extension=c:\build-cache\" + $dname + "\ext\php_opcache.dll -d opcache.enabled=1 -d opcache.enable_cli=1\" 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
                 echo "exit %errorlevel%" | Out-File -Encoding "ASCII" -Append task.bat
                 $here = (Get-Item -Path "." -Verbose).FullName
                 $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
