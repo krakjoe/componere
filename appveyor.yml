@@ -24,7 +24,7 @@ install:
                 }
 
 cache:
-        c:\build-cache -> .appveyor.yml
+        c:\build-cache -> appveyor.yml
 
 environment:
         BIN_SDK_VER: 2.1.1
