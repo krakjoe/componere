@@ -1,102 +1,162 @@
-version: '{branch}.{build}'
-branches:
-  only:
-  - develop
+version: "{branch}.build.{build}"
+skip_tags: true
 
-image: Visual Studio 2017
+branches:
+        only:
+                - master
+
+clone_folder:  c:\projects\componere
+
+install:
+        ps: |
+                if (-not (Test-Path c:\build-cache)) {
+                        mkdir c:\build-cache
+                }
+                $bname = 'php-sdk-' + $env:BIN_SDK_VER + '.zip'
+                if (-not (Test-Path c:\build-cache\$bname)) {
+                        Invoke-WebRequest "https://github.com/Microsoft/php-sdk-binary-tools/archive/$bname" -OutFile "c:\build-cache\$bname"
+                }
+                $dname0 = 'php-sdk-binary-tools-php-sdk-' + $env:BIN_SDK_VER
+                $dname1 = 'php-sdk-' + $env:BIN_SDK_VER
+                if (-not (Test-Path c:\build-cache\$dname1)) {
+                        7z x c:\build-cache\$bname -oc:\build-cache
+                        move c:\build-cache\$dname0 c:\build-cache\$dname1
+                }
+
+cache:
+        c:\build-cache -> .appveyor.yml
 
 environment:
-  PHP_SDK_BINARY_TOOLS_VER: php-sdk-2.1.1
+        BIN_SDK_VER: 2.1.1
+        matrix:
+                - PHP_VER: 7.0.28
+                  ARCH: x64
+                  VC: vc14
+                  TS: 0
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                - PHP_VER: 7.0.28
+                  ARCH: x64
+                  VC: vc14
+                  TS: 1
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                - PHP_VER: 7.0.28
+                  ARCH: x86
+                  VC: vc14
+                  TS: 0
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                - PHP_VER: 7.0.28
+                  ARCH: x86
+                  VC: vc14
+                  TS: 1
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                - PHP_VER: 7.1.15
+                  ARCH: x64
+                  VC: vc14
+                  TS: 0
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                - PHP_VER: 7.1.15
+                  ARCH: x64
+                  VC: vc14
+                  TS: 1
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                - PHP_VER: 7.1.15
+                  ARCH: x86
+                  VC: vc14
+                  TS: 0
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                - PHP_VER: 7.1.15
+                  ARCH: x86
+                  VC: vc14
+                  TS: 1
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                - PHP_VER: 7.2.3
+                  ARCH: x64
+                  VC: vc15
+                  TS: 0
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+                - PHP_VER: 7.2.3
+                  ARCH: x64
+                  VC: vc15
+                  TS: 1
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+                - PHP_VER: 7.2.3
+                  ARCH: x86
+                  VC: vc15
+                  TS: 0
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+                - PHP_VER: 7.2.3
+                  ARCH: x86
+                  VC: vc15
+                  TS: 1
+                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
-  matrix:
-    - ARCH: x86
-      PHP_VER: 7.2
-      VC_VER: vc15
-    - ARCH: x64
-      PHP_VER: 7.2
-      VC_VER: vc15 
-install:
-- cmd: cinst wget
 build_script:
-- cmd: >-
-    "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" %ARCH%
+        ps: |
+                $ts_part = ''
+                if ('0' -eq $env:TS) { $ts_part = '-nts' }
+                $bname = 'php-devel-pack-' + $env:PHP_VER + $ts_part + '-Win32-' + $env:VC.toUpper() + '-' + $env:ARCH + '.zip'
+                if (-not (Test-Path c:\build-cache\$bname)) {
+                        Invoke-WebRequest "http://windows.php.net/downloads/releases/archives/$bname" -OutFile "c:\build-cache\$bname"
+                        if (-not (Test-Path c:\build-cache\$bname)) {
+                                Invoke-WebRequest "http://windows.php.net/downloads/releases/$bname" -OutFile "c:\build-cache\$bname"
+                        }
+                }
+                $dname0 = 'php-' + $env:PHP_VER + '-devel-' + $env:VC.toUpper() + '-' + $env:ARCH
+                $dname1 = 'php-' + $env:PHP_VER + $ts_part + '-devel-' + $env:VC.toUpper() + '-' + $env:ARCH
+                if (-not (Test-Path c:\build-cache\$dname1)) {
+                        7z x c:\build-cache\$bname -oc:\build-cache
+                        move c:\build-cache\$dname0 c:\build-cache\$dname1
+                }
+                cd c:\projects\componere
+                $env:PATH = 'c:\build-cache\' + $dname1 + ';' + $env:PATH
+                #echo "@echo off" | Out-File -Encoding "ASCII" task.bat
+                #echo "" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "" | Out-File -Encoding "ASCII" task.bat
+                echo "call phpize 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "call configure --enable-componere --enable-debug-pack 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "nmake /nologo 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "exit %errorlevel%" | Out-File -Encoding "ASCII" -Append task.bat
+                $here = (Get-Item -Path "." -Verbose).FullName
+                $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
+                $task = $here + '\task.bat'
+                & $runner -t $task
 
-    wget https://github.com/OSTC/php-sdk-binary-tools/archive/%PHP_SDK_BINARY_TOOLS_VER%.zip --no-check-certificate -q -O php-sdk-binary-tools-%PHP_SDK_BINARY_TOOLS_VER%.zip
+after_build:
+        ps: |
+                $ts_part = 'ts'
+                if ('0' -eq $env:TS) { $ts_part = 'nts' }
+                $zip_bname = 'php_componere-' + $env:APPVEYOR_REPO_COMMIT.substring(0, 8) + '-' + $env:PHP_VER.substring(0, 3) + '-' + $ts_part + '-' + $env:VC + '-' + $env:ARCH + '.zip'
+                $dir = 'c:\projects\componere\';
+                if ('x64' -eq $env:ARCH) { $dir = $dir + 'x64\' }
+                $dir = $dir + 'Release'
+                if ('1' -eq $env:TS) { $dir = $dir + '_TS' }
+                & 7z a c:\$zip_bname $dir\php_componere.dll $dir\php_componere.pdb c:\projects\componere\LICENSE
+                Push-AppveyorArtifact c:\$zip_bname
 
-    7z x -y php-sdk-binary-tools-%PHP_SDK_BINARY_TOOLS_VER%.zip -oC:\projects
-
-    move C:\projects\php-sdk-binary-tools-%PHP_SDK_BINARY_TOOLS_VER% C:\projects\php-sdk
-    
-    C:\projects\php-sdk\bin\phpsdk_setvars.bat
-
-    git clone https://github.com/php/php-src C:\projects\php-src -b PHP-%PHP_VER% --depth=1
-
-    mkdir C:\projects\php-src\ext\componere
-
-    xcopy C:\projects\componere C:\projects\php-src\ext\componere /s /e /y /q
-
-    phpsdk_deps -u -t %VC_VER% -b %PHP_VER% -a %ARCH% -f -d C:\projects\php-src\deps
-
-    cd C:\projects\php-src
-
-    buildconf.bat
-
-    configure.bat --disable-all --enable-cli --enable-zts --enable-componere=shared --enable-opcache --with-prefix=C:\projects\componere\zts --with-php-build=deps --enable-ipv6
-
-    nmake
-
-    nmake install
-
-    echo [PHP]                                  >  C:\projects\componere\zts\php.ini
-
-    echo extension_dir ="ext"                   >> C:\projects\componere\zts\php.ini
-
-    echo extension=php_componere.dll            >> C:\projects\componere\zts\php.ini
-
-    echo zend_extension=php_opcache.dll         >> C:\projects\componere\zts\php.ini
-
-    echo opcache.optimization_level=0x7FFEBFFF  >> C:\projects\componere\zts\php.ini
-
-    C:\projects\componere\zts\php.exe -v
-
-    C:\projects\componere\zts\php.exe -m
-
-    nmake clean
-
-    configure.bat --disable-all --enable-cli --disable-zts --enable-componere=shared --enable-opcache --with-prefix=C:\projects\componere\nts --with-php-build=deps --enable-ipv6
-
-    nmake
-
-    nmake install
-
-    echo [PHP]                                  >  C:\projects\componere\nts\php.ini
-
-    echo extension_dir ="ext"                   >> C:\projects\componere\nts\php.ini
-
-    echo extension=php_componere.dll            >> C:\projects\componere\nts\php.ini
-
-    echo zend_extension=php_opcache.dll         >> C:\projects\componere\nts\php.ini
-
-    echo opcache.optimization_level=0x7FFEBFFF  >> C:\projects\componere\nts\php.ini
-
-    C:\projects\componere\nts\php.exe -v
-
-    C:\projects\componere\nts\php.exe -m
 test_script:
-- cmd: >-
-    set REPORT_EXIT_STATUS=1
+        ps: |
+                $ts_part = ''
+                if ('0' -eq $env:TS) { $ts_part = '-nts' }
+                $bname = 'php-' + $env:PHP_VER + $ts_part + '-Win32-' + $env:VC.toUpper() + '-' + $env:ARCH + '.zip'
+                if (-not (Test-Path c:\build-cache\$bname)) {
+                        Invoke-WebRequest "http://windows.php.net/downloads/releases/archives/$bname" -OutFile "c:\build-cache\$bname"
+                        if (-not (Test-Path c:\build-cache\$bname)) {
+                                Invoke-WebRequest "http://windows.php.net/downloads/releases/$bname" -OutFile "c:\build-cache\$bname"
+                        }
+                }
+                $dname = 'php-' + $env:PHP_VER + $ts_part + '-' + $env:VC.toUpper() + '-' + $env:ARCH
+                if (-not (Test-Path c:\build-cache\$dname)) {
+                        7z x c:\build-cache\$bname -oc:\build-cache\$dname
+                }
+                cd c:\projects\componere
+                echo "" | Out-File -Encoding "ASCII" task.bat
+                echo "set REPORT_EXIT_STATUS=1" | Out-File -Encoding "ASCII" -Append task.bat
+                $cmd = 'call configure --enable-componere --with-prefix=c:\build-cache\' + $dname + " 2>&1"
+                echo $cmd | Out-File -Encoding "ASCII" -Append task.bat
+                echo "nmake /nologo test TESTS=-q 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "exit %errorlevel%" | Out-File -Encoding "ASCII" -Append task.bat
+                $here = (Get-Item -Path "." -Verbose).FullName
+                $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
+                $task = $here + '\task.bat'
+                & $runner -t $task
 
-    C:\projects\componere\zts\php.exe /projects/php-src/run-tests.php -P -g FAIL,SKIP -d opcache.enable_cli=1 /projects/php-src/ext/componere -q --show-diff
-
-    C:\projects\componere\nts\php.exe /projects/php-src/run-tests.php -P -g FAIL,SKIP -d opcache.enable_cli=1 /projects/php-src/ext/componere -q --show-diff
-
-    C:\projects\componere\zts\php.exe /projects/php-src/run-tests.php -P -g FAIL,SKIP -d opcache.enable_cli=0 /projects/php-src/ext/componere -q --show-diff
-
-    C:\projects\componere\nts\php.exe /projects/php-src/run-tests.php -P -g FAIL,SKIP -d opcache.enable_cli=0 /projects/php-src/ext/componere -q --show-diff
-artifacts:
-  - path: nts
-    name: Componere-NTS-%PHP_VER%-%ARCH%-%APPVEYOR_REPO_COMMIT%
-    type: zip
-  - path: zts
-    name: Componere-ZTS-%PHP_VER%-%ARCH%-%APPVEYOR_REPO_COMMIT%
-    type: zip
