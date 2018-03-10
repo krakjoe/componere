@@ -221,7 +221,7 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 	}
 
 	if (parent->default_properties_count) {
-		uint32_t i = 0;
+		int i = 0;
 
 		ce->default_properties_table = (zval*)
 			ecalloc(sizeof(zval), parent->default_properties_count);
@@ -234,7 +234,7 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 	}
 
 	if (parent->default_static_members_count) {
-		uint32_t i = 0;
+		int i = 0;
 
 		ce->default_static_members_table = (zval*)
 			ecalloc(sizeof(zval), parent->default_static_members_count);

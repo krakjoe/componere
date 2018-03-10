@@ -109,7 +109,7 @@ static inline void php_componere_setup_handlers(
 		zend_object_get_gc_t collect_obj,
 		zend_object_clone_obj_t clone_obj, 
 		zend_object_free_obj_t free_obj, 
-		zend_long offset) {
+		int offset) {
 	memcpy(handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 
 	handlers->read_property = (zend_object_read_property_t) php_componere_deny_read;
