@@ -362,7 +362,8 @@ PHP_METHOD(Definition, __construct)
 
 	zend_initialize_class_data(o->ce, 1);
 
-	if (pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name)) {
+	pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name);
+	if (pce) {
 		if (zend_string_equals_ci(o->ce->name, pce->name)) {
 			if (pce->type != ZEND_USER_CLASS) {
 				php_componere_throw_ex(InvalidArgumentException,
