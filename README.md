@@ -41,7 +41,7 @@ Download DLL from the [pecl page](https://pecl.php.net/package/componere).
 
 ### Fedora / CentOS / RHEL
 
-RPM are available in [Remi's repository.](https://rpms.remirepo.net/).
+RPM are available in [Remi's repository](https://rpms.remirepo.net/).
 
 
 Explanation
