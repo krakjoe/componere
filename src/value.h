@@ -20,7 +20,7 @@
 
 typedef struct _php_componere_value_t {
 	zval value;
-	zend_long access;
+	int  access;
 	zend_object std;
 } php_componere_value_t;
 

@@ -29,11 +29,11 @@
 #include <zend_exceptions.h>
 #include <zend_inheritance.h>
 
-#include "src/common.h"
-#include "src/reflection.h"
-#include "src/definition.h"
-#include "src/method.h"
-#include "src/value.h"
+#include <src/common.h>
+#include <src/reflection.h>
+#include <src/definition.h>
+#include <src/method.h>
+#include <src/value.h>
 
 zend_class_entry *php_componere_definition_abstract_ce;
 zend_class_entry *php_componere_definition_ce;
@@ -221,7 +221,7 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 	}
 
 	if (parent->default_properties_count) {
-		uint32_t i = 0;
+		int i = 0;
 
 		ce->default_properties_table = (zval*)
 			ecalloc(sizeof(zval), parent->default_properties_count);
@@ -234,7 +234,7 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 	}
 
 	if (parent->default_static_members_count) {
-		uint32_t i = 0;
+		int i = 0;
 
 		ce->default_static_members_table = (zval*)
 			ecalloc(sizeof(zval), parent->default_static_members_count);
@@ -362,7 +362,8 @@ PHP_METHOD(Definition, __construct)
 
 	zend_initialize_class_data(o->ce, 1);
 
-	if (pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name)) {
+	pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name);
+	if (pce) {
 		if (zend_string_equals_ci(o->ce->name, pce->name)) {
 			if (pce->type != ZEND_USER_CLASS) {
 				php_componere_throw_ex(InvalidArgumentException,

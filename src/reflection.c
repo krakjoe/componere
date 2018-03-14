@@ -24,7 +24,7 @@
 
 #include <php.h>
 
-#include "src/reflection.h"
+#include <src/reflection.h>
 
 zend_class_entry* php_componere_reflection_class_ce;
 zend_class_entry* php_componere_reflection_method_ce;

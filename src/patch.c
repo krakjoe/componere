@@ -29,8 +29,8 @@
 #include <zend_exceptions.h>
 #include <zend_inheritance.h>
 
-#include "src/common.h"
-#include "src/definition.h"
+#include <src/common.h>
+#include <src/definition.h>
 
 zend_class_entry *php_componere_patch_ce;
 zend_object_handlers php_componere_patch_handlers;

@@ -27,8 +27,8 @@
 #include <zend_exceptions.h>
 #include <ext/spl/spl_exceptions.h>
 
-#include "src/common.h"
-#include "src/value.h"
+#include <src/common.h>
+#include <src/value.h>
 
 zend_class_entry *php_componere_value_ce;
 zend_object_handlers php_componere_value_handlers;
