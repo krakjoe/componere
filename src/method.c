@@ -34,6 +34,8 @@
 zend_class_entry *php_componere_method_ce;
 zend_object_handlers php_componere_method_handlers;
 
+#define ZEND_ACC_CHECK(f, a) (((f)->common.fn_flags & (a)))
+
 static inline zend_object* php_componere_method_create(zend_class_entry *ce) {
 	php_componere_method_t *o = 
 		(php_componere_method_t*) 
@@ -115,8 +117,8 @@ PHP_METHOD(Method, setProtected)
 
 	php_componere_no_parameters();
 
-	if ((o->function->common.fn_flags & ZEND_ACC_PROTECTED)) {
-		php_componere_throw_ex(RuntimeException, "access level (protected) already set");
+	if (ZEND_ACC_CHECK(o->function, ZEND_ACC_PROTECTED|ZEND_ACC_PRIVATE)) {
+		php_componere_throw_ex(RuntimeException, "access level already set");
 		return;
 	}
 
@@ -131,8 +133,8 @@ PHP_METHOD(Method, setPrivate)
 
 	php_componere_no_parameters();
 
-	if ((o->function->common.fn_flags & ZEND_ACC_PRIVATE)) {
-		php_componere_throw_ex(RuntimeException, "access level (private) already set");
+	if (ZEND_ACC_CHECK(o->function, ZEND_ACC_PRIVATE|ZEND_ACC_PROTECTED)) {
+		php_componere_throw_ex(RuntimeException, "access level already set");
 		return;
 	}
 
