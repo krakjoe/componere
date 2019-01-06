@@ -1,5 +1,5 @@
 --TEST--
-Method final access (2)
+Method access (2)
 --FILE--
 <?php
 use Componere\Method;
@@ -7,12 +7,12 @@ use Componere\Method;
 $m =  new Method(function(){});
 
 $m->setProtected();
-$m->setPrivate();
+$m->setProtected();
 ?>
 --EXPECTF--
-Fatal error: Uncaught RuntimeException: access level already set in %s:7
+Fatal error: Uncaught RuntimeException: access level (protected) already set in %s:7
 Stack trace:
-#0 %s(7): Componere\Method->setPrivate()
+#0 %s(7): Componere\Method->setProtected()
 #1 {main}
   thrown in %s on line 7
 

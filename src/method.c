@@ -115,8 +115,8 @@ PHP_METHOD(Method, setProtected)
 
 	php_componere_no_parameters();
 
-	if (o->function->common.fn_flags & ZEND_ACC_PPP_MASK) {
-		php_componere_throw_ex(RuntimeException, "access level already set");
+	if ((o->function->common.fn_flags & ZEND_ACC_PROTECTED)) {
+		php_componere_throw_ex(RuntimeException, "access level (protected) already set");
 		return;
 	}
 
@@ -131,8 +131,8 @@ PHP_METHOD(Method, setPrivate)
 
 	php_componere_no_parameters();
 
-	if (o->function->common.fn_flags & ZEND_ACC_PPP_MASK) {
-		php_componere_throw_ex(RuntimeException, "access level already set");
+	if ((o->function->common.fn_flags & ZEND_ACC_PRIVATE)) {
+		php_componere_throw_ex(RuntimeException, "access level (private) already set");
 		return;
 	}
 
