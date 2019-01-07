@@ -154,6 +154,17 @@ PHP_METHOD(Method, setStatic)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Method, setFinal)
+{
+	php_componere_method_t *o = php_componere_method_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	o->function->common.fn_flags |= ZEND_ACC_FINAL;
+
+	RETURN_ZVAL(getThis(), 1, 0);
+}
+
 PHP_METHOD(Method, getReflector)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
@@ -179,6 +190,7 @@ static zend_function_entry php_componere_method_methods[] = {
 	PHP_ME(Method, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Method, setFinal, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 
 	PHP_ME(Method, getReflector, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END
