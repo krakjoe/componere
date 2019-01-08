@@ -105,17 +105,18 @@ PHP_METHOD(Method, __construct)
 		(zend_function*) (((char*)Z_OBJ_P(closure)) + sizeof(zend_object)), 
 		sizeof(zend_op_array));
 
-	o->function->common.scope = NULL;
-	o->function->common.prototype = NULL;
-	o->function->common.fn_flags = 
-		(o->function->common.fn_flags & ZEND_ACC_STATIC) ?
+	o->function->op_array.refcount = NULL;
+	o->function->op_array.scope = NULL;
+	o->function->op_array.prototype = NULL;
+	o->function->op_array.fn_flags = 
+		(o->function->op_array.fn_flags & ZEND_ACC_STATIC) ?
 			(ZEND_ACC_STATIC|ZEND_ACC_PUBLIC) :
 			(ZEND_ACC_PUBLIC);
 
-	if (o->function->common.function_name) {
-		zend_string_release(o->function->common.function_name);
+	if (o->function->op_array.function_name) {
+		zend_string_release(o->function->op_array.function_name);
 	}
-	o->function->common.function_name = NULL;
+	o->function->op_array.function_name = NULL;
 
 	function_add_ref(o->function);
 }
