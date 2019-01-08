@@ -57,11 +57,12 @@ static inline zend_object* php_componere_method_clone(zval *object) {
 
 	o->function = (zend_function*) 
 		zend_arena_alloc(&CG(arena), sizeof(zend_op_array));
-	
+
 	memcpy(o->function, 
 		php_componere_method_function(object), sizeof(zend_op_array));
 
 	o->function->common.scope = NULL;
+	o->function->common.function_name = NULL;
 
 	function_add_ref(o->function);
 
@@ -107,6 +108,7 @@ PHP_METHOD(Method, __construct)
 		(zend_function*) (((char*)Z_OBJ_P(closure)) + sizeof(zend_object)), 
 		sizeof(zend_op_array));
 
+	o->function->op_array.function_name = NULL;
 	o->function->op_array.refcount = NULL;
 	o->function->op_array.scope = NULL;
 	o->function->op_array.prototype = NULL;
@@ -114,11 +116,6 @@ PHP_METHOD(Method, __construct)
 		(o->function->op_array.fn_flags & ZEND_ACC_STATIC) ?
 			(ZEND_ACC_STATIC|ZEND_ACC_PUBLIC) :
 			(ZEND_ACC_PUBLIC);
-
-	if (o->function->op_array.function_name) {
-		zend_string_release(o->function->op_array.function_name);
-	}
-	o->function->op_array.function_name = NULL;
 
 	function_add_ref(o->function);
 }
