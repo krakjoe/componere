@@ -488,6 +488,7 @@ PHP_METHOD(Definition, addMethod)
 	}
 
 	function->common.scope = o->ce;
+	function->common.function_name = zend_string_copy(name);
 
 	name = zend_string_tolower(name);
 

@@ -64,10 +64,12 @@ void php_componere_reflection_object_factory(
 	ro->ptr = ptr;
 	ro->ref_type = type;
 
-	ZVAL_STR(&key, name);
-	ZVAL_STR(&value, named);
+	if (named) {
+			ZVAL_STR(&key, name);
+			ZVAL_STR(&value, named);
 
-	zend_std_write_property(return_value, &key, &value, NULL);
+			zend_std_write_property(return_value, &key, &value, NULL);
+	}
 
 #if PHP_VERSION_ID < 70300
 	zend_string_release(name);

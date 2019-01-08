@@ -107,7 +107,15 @@ PHP_METHOD(Method, __construct)
 
 	o->function->common.scope = NULL;
 	o->function->common.prototype = NULL;
-	o->function->common.fn_flags &= ~ ZEND_ACC_CLOSURE;
+	o->function->common.fn_flags = 
+		(o->function->common.fn_flags & ZEND_ACC_STATIC) ?
+			(ZEND_ACC_STATIC|ZEND_ACC_PUBLIC) :
+			(ZEND_ACC_PUBLIC);
+
+	if (o->function->common.function_name) {
+		zend_string_release(o->function->common.function_name);
+	}
+	o->function->common.function_name = NULL;
 
 	function_add_ref(o->function);
 }
