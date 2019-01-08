@@ -479,7 +479,7 @@ PHP_METHOD(Definition, addMethod)
 	}
 
 	function = php_componere_method_function(method);
-	
+
 	if (function->common.scope) {
 		php_componere_throw(
 			"method was already added to %s", 

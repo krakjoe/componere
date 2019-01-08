@@ -106,6 +106,7 @@ PHP_METHOD(Method, __construct)
 		sizeof(zend_op_array));
 
 	o->function->common.scope = NULL;
+	o->function->common.prototype = NULL;
 	o->function->common.fn_flags &= ~ ZEND_ACC_CLOSURE;
 
 	function_add_ref(o->function);
