@@ -62,7 +62,6 @@ static inline zend_object* php_componere_method_clone(zval *object) {
 		php_componere_method_function(object), sizeof(zend_op_array));
 
 	o->function->common.scope = NULL;
-	o->function->common.fn_flags &= ~ ZEND_ACC_CLOSURE;
 
 	function_add_ref(o->function);
 
@@ -76,6 +75,9 @@ static inline void php_componere_method_destroy(zend_object *zo) {
 
 	if (o->function) {
 		destroy_zend_function(o->function);
+
+		if (o->function->common.function_name)
+			zend_string_release(o->function->common.function_name);
 	}
 
 	if (!Z_ISUNDEF(o->reflector)) {
