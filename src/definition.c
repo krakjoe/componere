@@ -434,6 +434,10 @@ PHP_METHOD(Definition, __construct)
 
 		o->ce->ce_flags &= ~ZEND_ACC_IMPLICIT_ABSTRACT_CLASS;
 	}
+
+	if (!o->ce->info.user.filename) {
+		o->ce->info.user.filename = name;
+	}
 }
 
 PHP_METHOD(Definition, register)
