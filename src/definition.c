@@ -296,15 +296,14 @@ static int php_componere_relink_class(zval *zv, int argc, va_list list, zend_has
 	zend_class_entry *def = va_arg(list, zend_class_entry*);
 	zend_class_entry *parent = va_arg(list, zend_class_entry*);
 
-	if ((el == parent) && 
-	    (parent->type == ZEND_USER_CLASS) &&
+	if ((parent->type == ZEND_USER_CLASS) &&
 	    !(parent->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_TRAIT))) {
 		zend_hash_apply_with_arguments(
 			&el->function_table, 
 			php_componere_relink_function,
 			2,
 			def, parent);
-		
+
 		zend_hash_apply_with_arguments(
 			&el->properties_info, 
 			php_componere_relink_property,
@@ -319,7 +318,9 @@ static int php_componere_relink_class(zval *zv, int argc, va_list list, zend_has
 			def, parent);
 #endif
 
-		el->parent = def;
+		if (el->parent == parent) {
+			el->parent = def;
+		}
 	}
 
 	return ZEND_HASH_APPLY_KEEP;
