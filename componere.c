@@ -32,6 +32,8 @@
 #include <src/reflection.h>
 #include <src/value.h>
 
+zend_string *php_componere_name_function;
+
 static inline void php_componere_optimizer_adjust()
 {
 	zend_string *key = zend_string_init(ZEND_STRL("opcache.optimization_level"), 0);
@@ -56,6 +58,20 @@ PHP_MINIT_FUNCTION(componere)
 	PHP_MINIT(Componere_Method)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_MINIT(Componere_Value)(INIT_FUNC_ARGS_PASSTHRU);
 
+#ifndef ZSTR_KNOWN
+	php_componere_name_function = zend_string_init(ZEND_STRL("function"), 1);
+#else
+	php_componere_name_function = ZSTR_KNOWN(ZEND_STR_FUNCTION);
+#endif
+
+	return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(componere)
+{
+#ifndef ZSTR_KNOWN
+	zend_string_release(php_componere_name_function);
+#endif
 	return SUCCESS;
 }
 
@@ -144,7 +160,7 @@ zend_module_entry componere_module_entry = {
 	"componere",
 	componere_functions,
 	PHP_MINIT(componere),
-	NULL,
+	PHP_MSHUTDOWN(componere),
 	PHP_RINIT(componere),
 	NULL,
 	PHP_MINFO(componere),
