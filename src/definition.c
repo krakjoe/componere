@@ -496,6 +496,16 @@ static zend_always_inline void php_componere_relink_objects(zend_objects_store *
 	}
 }
 
+static zend_always_inline void php_componere_relink_frames(zend_execute_data *execute_data) {
+	do {
+		if (EX(func) && EX(func)->type == ZEND_USER_FUNCTION) {
+			if (EX(func)->op_array.run_time_cache) {
+				memset(EX(func)->op_array.run_time_cache, 0, EX(func)->op_array.cache_size);
+			}
+		}
+	} while (execute_data = EX(prev_execute_data));
+}
+
 PHP_METHOD(Definition, register)
 {
 	php_componere_definition_t *o = 
@@ -510,6 +520,8 @@ PHP_METHOD(Definition, register)
 	}
 
 	if (o->saved) {
+		php_componere_relink_frames(EG(current_execute_data)->prev_execute_data);
+
 		zend_hash_apply_with_arguments(
 			CG(class_table), 
 			php_componere_relink_class, 2, 
