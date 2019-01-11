@@ -106,8 +106,6 @@ PHP_METHOD(Patch, __construct)
 		php_componere_definition_inherit(o->ce, pce);
 	}
 
-	php_componere_definition_parent(o->ce, pce);
-
 	o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 	o->saved = pce;
 	o->saved->refcount++;

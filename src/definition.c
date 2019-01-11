@@ -390,7 +390,7 @@ PHP_METHOD(Definition, __construct)
 		} else {
 			php_componere_definition_inherit(o->ce, pce);
 		}
-		php_componere_definition_parent(o->ce, pce);
+
 	}
 
 	o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
@@ -440,6 +440,62 @@ PHP_METHOD(Definition, __construct)
 	}
 }
 
+static int php_componere_relink_function(zval *zv, int argc, va_list list, zend_hash_key *key) {
+	zend_function *el = Z_FUNC_P(zv);
+	zend_class_entry *def = va_arg(list, zend_class_entry*);
+	zend_class_entry *parent = va_arg(list, zend_class_entry*);
+
+	if (el->type == ZEND_USER_FUNCTION) {
+		if (el->common.scope == parent) {
+			el->common.scope = def;
+		}
+
+		if (el->op_array.run_time_cache) {
+			memset(el->op_array.run_time_cache, 0, el->op_array.cache_size);
+		}
+	}
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+static int php_componere_relink_class(zval *zv, int argc, va_list list, zend_hash_key *key) {
+	zend_class_entry *el = Z_CE_P(zv);
+	zend_class_entry *def = va_arg(list, zend_class_entry*);
+	zend_class_entry *parent = va_arg(list, zend_class_entry*);
+
+	if ((el == parent) && 
+	    (parent->type == ZEND_USER_CLASS) &&
+	    !(parent->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_TRAIT))) {
+		zend_hash_apply_with_arguments(
+			&el->function_table, 
+			php_componere_relink_function,
+			2,
+			def, parent);
+
+		el->parent = def;
+	}
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+static zend_always_inline void php_componere_relink_objects(zend_objects_store *objects, zend_class_entry *def, zend_class_entry *parent) {
+	if (objects->top > 1) {
+		uint32_t it = 1,
+			 end = objects->top;
+
+		while (it < end) {
+			zend_object *object = objects->object_buckets[it];
+
+			if (IS_OBJ_VALID(object)) {
+				if (object->ce == parent) {
+					object->ce = def;
+				}
+			}
+			it++;
+		}
+	}
+}
+
 PHP_METHOD(Definition, register)
 {
 	php_componere_definition_t *o = 
@@ -451,6 +507,22 @@ PHP_METHOD(Definition, register)
 			"could not re-register %s", ZSTR_VAL(o->ce->name));
 		zend_string_release(name);
 		return;
+	}
+
+	if (o->saved) {
+		zend_hash_apply_with_arguments(
+			CG(class_table), 
+			php_componere_relink_class, 2, 
+			o->ce, 	
+			o->saved);
+
+		zend_hash_apply_with_arguments(
+			CG(function_table),
+			php_componere_relink_function, 2,
+			o->ce,
+			o->saved);
+
+		php_componere_relink_objects(&EG(objects_store), o->ce, o->saved);
 	}
 
 	zend_hash_update_ptr(CG(class_table), name, o->ce);
