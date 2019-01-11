@@ -23,13 +23,13 @@ object(ReflectionClass)#2 (1) {
 }
 object(ReflectionMethod)#4 (2) {
   ["name"]=>
-  string(0) ""
+  string(8) "function"
   ["class"]=>
   string(0) ""
 }
 object(ReflectionMethod)#4 (2) {
   ["name"]=>
-  string(0) ""
+  string(8) "function"
   ["class"]=>
   string(0) ""
 }

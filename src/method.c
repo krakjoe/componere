@@ -62,7 +62,7 @@ static inline zend_object* php_componere_method_clone(zval *object) {
 		php_componere_method_function(object), sizeof(zend_op_array));
 
 	o->function->common.scope = NULL;
-	o->function->common.function_name = NULL;
+	o->function->common.function_name = zend_string_copy(ZSTR_KNOWN(ZEND_STR_FUNCTION));
 
 	function_add_ref(o->function);
 
@@ -108,7 +108,7 @@ PHP_METHOD(Method, __construct)
 		(zend_function*) (((char*)Z_OBJ_P(closure)) + sizeof(zend_object)), 
 		sizeof(zend_op_array));
 
-	o->function->op_array.function_name = NULL;
+	o->function->op_array.function_name = zend_string_copy(ZSTR_KNOWN(ZEND_STR_FUNCTION));
 	o->function->op_array.refcount = NULL;
 	o->function->op_array.scope = NULL;
 	o->function->op_array.prototype = NULL;

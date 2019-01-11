@@ -552,6 +552,14 @@ PHP_METHOD(Definition, addTrait)
 		return;
 	}
 
+	{
+		zend_string *name;
+
+		ZEND_HASH_FOREACH_STR_KEY(&trait->function_table, name) {
+			zend_hash_del(&o->ce->function_table, name);
+		} ZEND_HASH_FOREACH_END();
+	}
+
 	zend_do_implement_trait(o->ce, trait);
 	zend_do_bind_traits(o->ce);
 
