@@ -176,8 +176,6 @@ inline void php_componere_definition_inherit(zend_class_entry *ce, zend_class_en
 
 inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
 {
-	zend_class_entry* pair[2] = {ce, parent};
-	
 	if (parent->num_interfaces) {
 		ce->interfaces = (zend_class_entry **) 
 			ecalloc(parent->num_interfaces, sizeof(zend_class_entry*));
