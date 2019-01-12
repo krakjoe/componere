@@ -693,6 +693,31 @@ ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_property, 0, 0, 2)
 	ZEND_ARG_INFO(0, value)
 ZEND_END_ARG_INFO()
 
+static zend_always_inline zend_bool php_componere_property_check(zend_objects_store *objects, php_componere_definition_t *def) {
+	uint32_t id = 0,
+		 end = objects->top;
+	
+	if (objects->top > 1) {
+		uint32_t it = 1,
+			 end = objects->top;
+
+		while (it < end) {
+			zend_object *object = objects->object_buckets[it];
+
+			if (IS_OBJ_VALID(object)) {
+				if (object->ce == def->saved) {
+					if (def->ce->default_properties_count >= object->ce->default_properties_count) {
+						return 0;
+					}
+				}
+			}
+			it++;
+		}
+	}
+	
+	return 1;
+}
+
 PHP_METHOD(Definition, addProperty)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
@@ -714,6 +739,13 @@ PHP_METHOD(Definition, addProperty)
 	if (o->registered) {
 		php_componere_throw( 
 			"%s is already registered, cannot add property %s", 
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+		return;
+	}
+
+	if (o->saved && !php_componere_property_check(&EG(objects_store), o)) {
+		php_componere_throw(
+			"%s is already in use, cannot add property %s",
 			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
 		return;
 	}
