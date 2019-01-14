@@ -506,7 +506,11 @@ PHP_METHOD(Definition, __construct)
 static zend_always_inline void php_componere_update_constants_zval(zend_class_entry *scope, zval *start, zval *end) {
 	while (start < end) {
 		if (Z_TYPE_P(start) == IS_CONSTANT_AST || Z_TYPE_P(start) == IS_CONSTANT) {
+#if PHP_VERSION_ID < 70100
+			zval_update_constant_ex(start, 1, scope);
+#else
 			zval_update_constant_ex(start, scope);
+#endif
 		}
 		start++;
 	}
