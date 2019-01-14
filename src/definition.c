@@ -358,26 +358,27 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 
 	if (o->registered && o->saved) {
 		zend_string *name = zend_string_tolower(o->saved->name);
+		void        *ce   = o->ce;
 
 		if (EG(current_execute_data)) {
 			php_componere_relink_frames(EG(current_execute_data));
 		}
 
+		zend_hash_update_ptr(CG(class_table), name, o->saved);
+
 		zend_hash_apply_with_arguments(
 			CG(class_table), 
 			php_componere_relink_class, 2, 
 			o->saved,
-			o->ce);
+			ce);
 
 		zend_hash_apply_with_arguments(
 			CG(function_table),
 			php_componere_relink_function, 2,
 			o->saved,
-			o->ce);
+			ce);
 
-		php_componere_relink_objects(&EG(objects_store), o->saved, o->ce);
-
-		zend_hash_update_ptr(CG(class_table), name, o->saved);
+		php_componere_relink_objects(&EG(objects_store), o->saved, ce);
 
 		zend_string_release(name);
 	} else if (!o->registered) {
