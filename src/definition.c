@@ -605,7 +605,7 @@ static zend_always_inline zend_bool php_componere_guard_check(zend_objects_store
 
 			if (IS_OBJ_VALID(object)) {
 				if (object->ce == def->saved) {
-					return 0;
+					return object->ce->ce_flags & ZEND_ACC_USE_GUARDS;
 				}
 			}
 			it++;
