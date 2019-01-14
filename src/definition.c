@@ -176,6 +176,10 @@ inline void php_componere_definition_inherit(zend_class_entry *ce, zend_class_en
 
 inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
 {
+	ce->create_object = parent->create_object;
+	ce->ce_flags |= parent->ce_flags;
+	ce->parent = parent->parent;
+
 	if (parent->num_interfaces) {
 		ce->interfaces = (zend_class_entry **) 
 			ecalloc(parent->num_interfaces, sizeof(zend_class_entry*));
@@ -250,11 +254,7 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 			php_componere_definition_method_copy);
 	}
 
-	php_componere_definition_magic(ce, parent);
-
-	ce->create_object = parent->create_object;
-	ce->ce_flags |= parent->ce_flags;
-	ce->parent = parent->parent;	
+	php_componere_definition_magic(ce, parent);	
 }
 
 static int php_componere_relink_function(zval *zv, int argc, va_list list, zend_hash_key *key) {
