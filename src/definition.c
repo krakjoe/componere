@@ -562,11 +562,13 @@ PHP_METHOD(Definition, register)
 		o->ce,
 		o->saved);
 
+#if PHP_VERSION_ID >= 70100
 	zend_hash_apply_with_arguments(
 		&o->ce->constants_table,
 		php_componere_relink_constant, 2,
 		o->ce,
 		o->saved);
+#endif
 
 	if (o->saved) {
 		php_componere_relink_frames(EG(current_execute_data)->prev_execute_data);
