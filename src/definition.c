@@ -196,7 +196,7 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 			ZVAL_DUP(&ce->default_properties_table[i], &parent->default_properties_table[i]);
 		}
 
-		ce->default_properties_count = parent->default_properties_count;	
+		ce->default_properties_count = parent->default_properties_count;
 	}
 
 	if (parent->default_static_members_count) {
@@ -503,6 +503,31 @@ PHP_METHOD(Definition, __construct)
 	}
 }
 
+static zend_always_inline void php_componere_update_constants_zval(zend_class_entry *scope, zval *start, zval *end) {
+	while (start < end) {
+		if (Z_TYPE_P(start) == IS_CONSTANT_AST || Z_TYPE_P(start) == IS_CONSTANT) {
+			zval_update_constant_ex(start, scope);
+		}
+		start++;
+	}
+}
+
+static zend_always_inline void php_componere_update_constants(zend_class_entry *ce) {
+	if (ce->default_properties_count) {
+		php_componere_update_constants_zval(
+			ce,
+			ce->default_properties_table,
+			ce->default_properties_table + ce->default_properties_count);
+	}
+
+	if (ce->default_static_members_count) {
+		php_componere_update_constants_zval(
+			ce,
+			ce->default_static_members_table,
+			ce->default_static_members_table + ce->default_static_members_count);
+	}
+}
+
 PHP_METHOD(Definition, register)
 {
 	php_componere_definition_t *o = 
@@ -515,6 +540,24 @@ PHP_METHOD(Definition, register)
 		zend_string_release(name);
 		return;
 	}
+
+	zend_hash_apply_with_arguments(
+		&o->ce->function_table,
+		php_componere_relink_function, 2,
+		o->ce,
+		o->saved);
+
+	zend_hash_apply_with_arguments(
+		&o->ce->properties_info,
+		php_componere_relink_property, 2,
+		o->ce,
+		o->saved);
+
+	zend_hash_apply_with_arguments(
+		&o->ce->constants_table,
+		php_componere_relink_constant, 2,
+		o->ce,
+		o->saved);
 
 	if (o->saved) {
 		php_componere_relink_frames(EG(current_execute_data)->prev_execute_data);
@@ -536,25 +579,9 @@ PHP_METHOD(Definition, register)
 		o->saved->refcount++;
 	}
 
-	zend_hash_apply_with_arguments(
-		&o->ce->function_table,
-		php_componere_relink_function, 2,
-		o->ce,
-		o->saved);
-
-	zend_hash_apply_with_arguments(
-		&o->ce->properties_info,
-		php_componere_relink_property, 2,
-		o->ce,
-		o->saved);
-
-	zend_hash_apply_with_arguments(
-		&o->ce->constants_table,
-		php_componere_relink_constant, 2,
-		o->ce,
-		o->saved);
-
 	zend_hash_update_ptr(CG(class_table), name, o->ce);
+
+	php_componere_update_constants(o->ce);
 
 	o->ce->refcount = 1;
 	o->registered = 1;
