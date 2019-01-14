@@ -542,6 +542,18 @@ PHP_METHOD(Definition, register)
 		o->ce,
 		o->saved);
 
+	zend_hash_apply_with_arguments(
+		&o->ce->properties_info,
+		php_componere_relink_property, 2,
+		o->ce,
+		o->saved);
+
+	zend_hash_apply_with_arguments(
+		&o->ce->constants_table,
+		php_componere_relink_constant, 2,
+		o->ce,
+		o->saved);
+
 	zend_hash_update_ptr(CG(class_table), name, o->ce);
 
 	o->ce->refcount = 1;
