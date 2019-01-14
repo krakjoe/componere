@@ -194,6 +194,14 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 
 		for (i = 0; i < parent->default_properties_count; i++) {
 			ZVAL_DUP(&ce->default_properties_table[i], &parent->default_properties_table[i]);
+#ifdef IS_CONSTANT
+			if (Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT_AST || 
+			    Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT) {
+#else
+			if (Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT_AST) {
+#endif
+				ce->ce_flags &= ~ZEND_ACC_CONSTANTS_UPDATED;
+			}
 		}
 
 		ce->default_properties_count = parent->default_properties_count;
@@ -207,6 +215,14 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 
 		for (i = 0; i < parent->default_static_members_count; i++) {
 			ZVAL_DUP(&ce->default_static_members_table[i], &parent->default_static_members_table[i]);
+#ifdef IS_CONSTANT
+			if (Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT_AST || 
+			    Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT) {
+#else
+			if (Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT_AST) {
+#endif
+				ce->ce_flags &= ~ZEND_ACC_CONSTANTS_UPDATED;
+			}
 		}
 
 		ce->static_members_table = ce->default_static_members_table;
@@ -503,40 +519,6 @@ PHP_METHOD(Definition, __construct)
 	}
 }
 
-static zend_always_inline void php_componere_update_constants_zval(zend_class_entry *scope, zval *start, zval *end) {
-	while (start < end) {
-#ifdef IS_CONSTANT
-		if (Z_TYPE_P(start) == IS_CONSTANT_AST || Z_TYPE_P(start) == IS_CONSTANT) {
-#else
-		if (Z_TYPE_P(start) == IS_CONSTANT_AST) {
-#endif
-
-#if PHP_VERSION_ID < 70100
-			zval_update_constant_ex(start, 1, scope);
-#else
-			zval_update_constant_ex(start, scope);
-#endif
-		}
-		start++;
-	}
-}
-
-static zend_always_inline void php_componere_update_constants(zend_class_entry *ce) {
-	if (ce->default_properties_count) {
-		php_componere_update_constants_zval(
-			ce,
-			ce->default_properties_table,
-			ce->default_properties_table + ce->default_properties_count);
-	}
-
-	if (ce->default_static_members_count) {
-		php_componere_update_constants_zval(
-			ce,
-			ce->default_static_members_table,
-			ce->default_static_members_table + ce->default_static_members_count);
-	}
-}
-
 PHP_METHOD(Definition, register)
 {
 	php_componere_definition_t *o = 
@@ -591,8 +573,6 @@ PHP_METHOD(Definition, register)
 	}
 
 	zend_hash_update_ptr(CG(class_table), name, o->ce);
-
-	php_componere_update_constants(o->ce);
 
 	o->ce->refcount = 1;
 	o->registered = 1;
