@@ -45,7 +45,7 @@ typedef struct _zend_closure_t {
 	zend_function     func;
 	zval              this_ptr;
 	zend_class_entry *called_scope;
-#if PHP_VERSION_ID <= 70100
+#if PHP_VERSION_ID <= 70200
 	void (*orig_internal_handler)(INTERNAL_FUNCTION_PARAMETERS);
 #else
 	zif_handler       orig_internal_handler;
