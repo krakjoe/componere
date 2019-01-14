@@ -12,6 +12,7 @@ $definition
 	->addMethod("__clone", new Method(function(){ echo "clone\n"; }))
 	->addMethod("__get", new Method(function(){ echo "get\n"; }))
 	->addMethod("__set", new Method(function(){ echo "set\n"; }))
+	->addMethod("__isset", new Method(function(){ echo "isset\n"; }))
 	->addMethod("__unset", new Method(function(){ echo "unset\n"; }))
 	->addMethod("__call", new Method(function(){ echo "call\n"; }))
 	->addMethod("__callstatic", new Method(function(){ echo "callstatic\n"; }))
@@ -27,6 +28,7 @@ $b = clone $a;
 var_dump($a->get);
 $a->set = 10;
 unset($a->set);
+isset($a->set);
 
 $a->call();
 A::callStatic();
@@ -41,6 +43,7 @@ get
 NULL
 set
 unset
+isset
 call
 callstatic
 tostring

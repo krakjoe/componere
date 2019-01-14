@@ -477,10 +477,7 @@ PHP_METHOD(Definition, __construct)
 		} else {
 			php_componere_definition_inherit(o->ce, pce);
 		}
-
 	}
-
-	o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 
 	if (pce && pce->type == ZEND_USER_CLASS) {
 		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
@@ -595,6 +592,29 @@ ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_method, 0, 0, 2)
 	ZEND_ARG_INFO(0, method)
 ZEND_END_ARG_INFO()
 
+static zend_always_inline zend_bool php_componere_guard_check(zend_objects_store *objects, php_componere_definition_t *def) {
+	uint32_t id = 0,
+		 end = objects->top;
+	
+	if (objects->top > 1) {
+		uint32_t it = 1,
+			 end = objects->top;
+
+		while (it < end) {
+			zend_object *object = objects->object_buckets[it];
+
+			if (IS_OBJ_VALID(object)) {
+				if (object->ce == def->saved) {
+					return 0;
+				}
+			}
+			it++;
+		}
+	}
+	
+	return 1;
+}
+
 PHP_METHOD(Definition, addMethod)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
@@ -623,6 +643,54 @@ PHP_METHOD(Definition, addMethod)
 		return;
 	}
 
+	if (zend_string_equals_literal_ci(name, "__construct")) {
+		o->ce->constructor = function;
+	} else if (zend_string_equals_literal_ci(name, "__destruct")) {
+		o->ce->destructor = function;
+	} else if (zend_string_equals_literal_ci(name, "__clone")) {
+		o->ce->clone = function;
+	} else if (zend_string_equals_literal_ci(name, "__get")) {
+		if (!php_componere_guard_check(&EG(objects_store), o)) {
+			php_componere_throw("cannot add __get to a class that is in use");
+			return;
+		}
+		o->ce->__get = function;
+		o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
+	} else if (zend_string_equals_literal_ci(name, "__set")) {
+		if (!php_componere_guard_check(&EG(objects_store), o)) {
+			php_componere_throw("cannot add __set to a class that is in use");
+			return;
+		}
+		o->ce->__set = function;
+		o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
+	} else if (zend_string_equals_literal_ci(name, "__unset")) {
+		if (!php_componere_guard_check(&EG(objects_store), o)) {
+			php_componere_throw("cannot add __unset to a class that is in use");
+			return;
+		}
+		o->ce->__unset = function;
+		o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
+	} else if (zend_string_equals_literal_ci(name, "__isset")) {
+		if (!php_componere_guard_check(&EG(objects_store), o)) {
+			php_componere_throw("cannot add __isset to a class that is in use");
+			return;
+		}
+		o->ce->__isset = function;
+		o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
+	} else if (zend_string_equals_literal_ci(name, "__call")) {
+		o->ce->__call = function;
+	} else if (zend_string_equals_literal_ci(name, "__callstatic")) {
+		o->ce->__callstatic = function;
+	} else if (zend_string_equals_literal_ci(name, "__tostring")) {
+		o->ce->__tostring = function;
+	} else if (zend_string_equals_literal_ci(name, "__debuginfo")) {
+		o->ce->__debugInfo = function;
+	} else if (zend_string_equals_literal_ci(name, "serialize")) {
+		o->ce->serialize_func = function;
+	} else if (zend_string_equals_literal_ci(name, "unserialize")) {
+		o->ce->unserialize_func = function;
+	}
+
 	function->common.scope = o->ce;
 	function->common.function_name = zend_string_copy(name);
 
@@ -631,32 +699,6 @@ PHP_METHOD(Definition, addMethod)
 	zend_hash_update_ptr(&o->ce->function_table, name, function);
 	
 	function_add_ref(function);
-
-	if (zend_string_equals_literal(name, "__construct")) {
-		o->ce->constructor = function;
-	} else if (zend_string_equals_literal(name, "__destruct")) {
-		o->ce->destructor = function;
-	} else if (zend_string_equals_literal(name, "__clone")) {
-		o->ce->clone = function;
-	} else if (zend_string_equals_literal(name, "__get")) {
-		o->ce->__get = function;
-	} else if (zend_string_equals_literal(name, "__set")) {
-		o->ce->__set = function;
-	} else if (zend_string_equals_literal(name, "__unset")) {
-		o->ce->__unset = function;
-	} else if (zend_string_equals_literal(name, "__call")) {
-		o->ce->__call = function;
-	} else if (zend_string_equals_literal(name, "__callstatic")) {
-		o->ce->__callstatic = function;
-	} else if (zend_string_equals_literal(name, "__tostring")) {
-		o->ce->__tostring = function;
-	} else if (zend_string_equals_literal(name, "__debuginfo")) {
-		o->ce->__debugInfo = function;
-	} else if (zend_string_equals_literal(name, "serialize")) {
-		o->ce->serialize_func = function;
-	} else if (zend_string_equals_literal(name, "unserialize")) {
-		o->ce->unserialize_func = function;
-	}
 
 	zend_string_release(name);
 
