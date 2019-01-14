@@ -118,13 +118,13 @@ static inline void php_componere_definition_constant_copy(zval *zv) {
 		zend_string_addref(child->doc_comment);
 	}
 
-	ZVAL_DUP(&child->value, &constant->value);
+	ZVAL_COPY(&child->value, &constant->value);
 
 	Z_PTR_P(zv) = child;
 }
 #else
 static inline void php_componere_definition_constant_copy(zval *zv) {
-	ZVAL_DUP(zv, zv);
+	Z_ADDREF_P(zv);
 }
 #endif
 
@@ -251,7 +251,11 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 	ce->ce_flags     |= parent->ce_flags;
 	ce->ce_flags     &= ~ZEND_ACC_CONSTANTS_UPDATED;
 	ce->parent        = parent->parent;
-	ce->create_object = parent->create_object;
+
+	ce->create_object              = parent->create_object;
+	ce->get_iterator               = parent->get_iterator;
+	ce->interface_gets_implemented = parent->interface_gets_implemented;
+	ce->get_static_method          = parent->get_static_method;
 }
 
 static int php_componere_relink_function(zval *zv, int argc, va_list list, zend_hash_key *key) {
