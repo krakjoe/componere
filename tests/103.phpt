@@ -1,5 +1,5 @@
 --TEST--
-IS_CONSTANT_AST updates on register
+IS_CONSTANT_AST updates
 --FILE--
 <?php
 class Foo {
