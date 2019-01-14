@@ -176,10 +176,6 @@ inline void php_componere_definition_inherit(zend_class_entry *ce, zend_class_en
 
 inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
 {
-	ce->create_object = parent->create_object;
-	ce->ce_flags |= parent->ce_flags;
-	ce->parent = parent->parent;
-
 	if (parent->num_interfaces) {
 		ce->interfaces = (zend_class_entry **) 
 			ecalloc(parent->num_interfaces, sizeof(zend_class_entry*));
@@ -198,14 +194,6 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 
 		for (i = 0; i < parent->default_properties_count; i++) {
 			ZVAL_DUP(&ce->default_properties_table[i], &parent->default_properties_table[i]);
-#ifdef IS_CONSTANT
-			if (Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT_AST || 
-			    Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT) {
-#else
-			if (Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT_AST) {
-#endif
-				ce->ce_flags &= ~ZEND_ACC_CONSTANTS_UPDATED;
-			}
 		}
 
 		ce->default_properties_count = parent->default_properties_count;
@@ -219,14 +207,6 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 
 		for (i = 0; i < parent->default_static_members_count; i++) {
 			ZVAL_DUP(&ce->default_static_members_table[i], &parent->default_static_members_table[i]);
-#ifdef IS_CONSTANT
-			if (Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT_AST || 
-			    Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT) {
-#else
-			if (Z_TYPE(ce->default_properties_table[i]) == IS_CONSTANT_AST) {
-#endif
-				ce->ce_flags &= ~ZEND_ACC_CONSTANTS_UPDATED;
-			}
 		}
 
 		ce->static_members_table = ce->default_static_members_table;
@@ -254,7 +234,12 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 			php_componere_definition_method_copy);
 	}
 
-	php_componere_definition_magic(ce, parent);	
+	php_componere_definition_magic(ce, parent);
+
+	ce->ce_flags     |= parent->ce_flags;
+	ce->ce_flags     &= ~ZEND_ACC_CONSTANTS_UPDATED;
+	ce->parent        = parent->parent;
+	ce->create_object = parent->create_object;
 }
 
 static int php_componere_relink_function(zval *zv, int argc, va_list list, zend_hash_key *key) {
