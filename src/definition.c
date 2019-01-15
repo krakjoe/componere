@@ -124,7 +124,7 @@ static inline void php_componere_definition_constant_copy(zval *zv) {
 }
 #else
 static inline void php_componere_definition_constant_copy(zval *zv) {
-	Z_ADDREF_P(zv);
+	ZVAL_DUP(zv, zv);
 }
 #endif
 
