@@ -174,118 +174,98 @@ inline void php_componere_definition_parent(zend_class_entry *ce, zend_class_ent
 	} while ((*pce));
 }
 
-static int php_componere_relink_function(zval *zv, int argc, va_list list, zend_hash_key *key);
-static inline int php_componere_relink_property(zval *zv, int argc, va_list list, zend_hash_key *key);
-#if PHP_VERSION_ID >= 70100
-static inline int php_componere_relink_constant(zval *zv, int argc, va_list list, zend_hash_key *key);
-#endif
+inline void php_componere_definition_inherit(zend_class_entry *ce, zend_class_entry *parent) {
+	zend_bool is_final = parent->ce_flags & ZEND_ACC_FINAL;
 
-inline void php_componere_definition_inherit(zend_class_entry *new, zend_class_entry *old) {
-	zend_bool is_final = old->ce_flags & ZEND_ACC_FINAL;
+	parent->ce_flags &= ~ ZEND_ACC_FINAL;
 
-	old->ce_flags &= ~ ZEND_ACC_FINAL;
-
-	zend_do_inheritance(new, old);
+	zend_do_inheritance(ce, parent);
 
 	if (is_final) {
-		old->ce_flags |= ZEND_ACC_FINAL;
+		parent->ce_flags |= ZEND_ACC_FINAL;
 	}
-
-	zend_hash_apply_with_arguments(&new->function_table, php_componere_relink_function, 2, new, old);
-	zend_hash_apply_with_arguments(&new->properties_info, php_componere_relink_property, 2, new, old);
-#if PHP_VERSION_ID >= 70100
-	zend_hash_apply_with_arguments(&new->constants_table, php_componere_relink_constant, 2, new, old);
-#endif
 }
 
-inline void php_componere_definition_copy(zend_class_entry *new, zend_class_entry *old)
+inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
 {
-	if (old->num_interfaces) {
-		new->interfaces = (zend_class_entry **) 
-			ecalloc(old->num_interfaces, sizeof(zend_class_entry*));
+	if (parent->num_interfaces) {
+		ce->interfaces = (zend_class_entry **) 
+			ecalloc(parent->num_interfaces, sizeof(zend_class_entry*));
 
-		memcpy(new->interfaces, old->interfaces,
-			sizeof(zend_class_entry*) * old->num_interfaces);
+		memcpy(ce->interfaces, parent->interfaces,
+			sizeof(zend_class_entry*) * parent->num_interfaces);
 
-		new->num_interfaces = old->num_interfaces;
+		ce->num_interfaces = parent->num_interfaces;
 	}
 
-	if (old->default_properties_count) {
+	if (parent->default_properties_count) {
 		int i = 0;
 
-		new->default_properties_table = (zval*)
-			ecalloc(sizeof(zval), old->default_properties_count);
+		ce->default_properties_table = (zval*)
+			ecalloc(sizeof(zval), parent->default_properties_count);
 
-		for (i = 0; i < old->default_properties_count; i++) {
-			ZVAL_DUP(&new->default_properties_table[i], &old->default_properties_table[i]);
+		for (i = 0; i < parent->default_properties_count; i++) {
+			ZVAL_DUP(&ce->default_properties_table[i], &parent->default_properties_table[i]);
 		}
 
-		new->default_properties_count = old->default_properties_count;
+		ce->default_properties_count = parent->default_properties_count;
 	}
 
-	if (old->default_static_members_count) {
+	if (parent->default_static_members_count) {
 		int i = 0;
 
-		new->default_static_members_table = (zval*)
-			ecalloc(sizeof(zval), old->default_static_members_count);
+		ce->default_static_members_table = (zval*)
+			ecalloc(sizeof(zval), parent->default_static_members_count);
 
-		for (i = 0; i < old->default_static_members_count; i++) {
-			ZVAL_DUP(&new->default_static_members_table[i], &old->default_static_members_table[i]);
+		for (i = 0; i < parent->default_static_members_count; i++) {
+			ZVAL_DUP(&ce->default_static_members_table[i], &parent->default_static_members_table[i]);
 		}
 
-		new->static_members_table = new->default_static_members_table;
-		new->default_static_members_count = old->default_static_members_count;
+		ce->static_members_table = ce->default_static_members_table;
+		ce->default_static_members_count = parent->default_static_members_count;
 	}
 
-	if (zend_hash_num_elements(&old->properties_info)) {
+	if (zend_hash_num_elements(&parent->properties_info)) {
 		zend_hash_copy(
-			&new->properties_info, 
-			&old->properties_info, 
+			&ce->properties_info, 
+			&parent->properties_info, 
 			php_componere_definition_property_copy);
-
-		zend_hash_apply_with_arguments(&new->properties_info, php_componere_relink_property, 2, new, old);
 	}
 
-	if (zend_hash_num_elements(&old->constants_table)) {
+	if (zend_hash_num_elements(&parent->constants_table)) {
 		zend_hash_copy(
-			&new->constants_table, 
-			&old->constants_table, 
+			&ce->constants_table, 
+			&parent->constants_table, 
 			php_componere_definition_constant_copy);
-
-#if PHP_VERSION_ID >= 70100
-		zend_hash_apply_with_arguments(&new->constants_table, php_componere_relink_constant, 2, new, old);
-#endif
 	}
 
-	if (zend_hash_num_elements(&old->function_table)) {
+	if (zend_hash_num_elements(&parent->function_table)) {
 		zend_hash_copy(
-			&new->function_table,
-			&old->function_table,
+			&ce->function_table,
+			&parent->function_table,
 			php_componere_definition_method_copy);
-
-		zend_hash_apply_with_arguments(&new->function_table, php_componere_relink_function, 2, new, old);
 	}
 
-	php_componere_definition_magic(new, old);
+	php_componere_definition_magic(ce, parent);
 
-	new->ce_flags     |= old->ce_flags;
-	new->ce_flags     &= ~ZEND_ACC_CONSTANTS_UPDATED;
-	new->parent        = old->parent;
+	ce->ce_flags     |= parent->ce_flags;
+	ce->ce_flags     &= ~ZEND_ACC_CONSTANTS_UPDATED;
+	ce->parent        = parent->parent;
 
-	new->create_object              = old->create_object;
-	new->get_iterator               = old->get_iterator;
-	new->interface_gets_implemented = old->interface_gets_implemented;
-	new->get_static_method          = old->get_static_method;
+	ce->create_object              = parent->create_object;
+	ce->get_iterator               = parent->get_iterator;
+	ce->interface_gets_implemented = parent->interface_gets_implemented;
+	ce->get_static_method          = parent->get_static_method;
 }
 
 static int php_componere_relink_function(zval *zv, int argc, va_list list, zend_hash_key *key) {
 	zend_function *el = Z_FUNC_P(zv);
-	zend_class_entry *new = va_arg(list, zend_class_entry*);
-	zend_class_entry *old = va_arg(list, zend_class_entry*);
+	zend_class_entry *def = va_arg(list, zend_class_entry*);
+	zend_class_entry *parent = va_arg(list, zend_class_entry*);
 
 	if (el->type == ZEND_USER_FUNCTION) {
-		if (el->common.scope == old) {
-			el->common.scope = new;
+		if (el->common.scope == parent) {
+			el->common.scope = def;
 		}
 
 		if (el->op_array.run_time_cache) {
@@ -298,11 +278,13 @@ static int php_componere_relink_function(zval *zv, int argc, va_list list, zend_
 
 static inline int php_componere_relink_property(zval *zv, int argc, va_list list, zend_hash_key *key) {
 	zend_property_info *el = Z_PTR_P(zv);
-	zend_class_entry *new = va_arg(list, zend_class_entry*);
-	zend_class_entry *old = va_arg(list, zend_class_entry*);
+	zend_class_entry *def = va_arg(list, zend_class_entry*);
+	zend_class_entry *parent = va_arg(list, zend_class_entry*);
 
-	if (el->ce == old) {
-		el->ce = new;
+	if (el->ce == parent) {
+		el->ce = def;
+	} else if (el->ce == def) {
+		el->ce = parent;
 	}
 	
 	return ZEND_HASH_APPLY_KEEP;
@@ -311,11 +293,13 @@ static inline int php_componere_relink_property(zval *zv, int argc, va_list list
 #if PHP_VERSION_ID >= 70100
 static inline int php_componere_relink_constant(zval *zv, int argc, va_list list, zend_hash_key *key) {
 	zend_class_constant *el = Z_PTR_P(zv);
-	zend_class_entry    *new = va_arg(list, zend_class_entry*);
-	zend_class_entry    *old = va_arg(list, zend_class_entry*);	
+	zend_class_entry    *def = va_arg(list, zend_class_entry*);
+	zend_class_entry    *parent = va_arg(list, zend_class_entry*);	
 
-	if (el->ce == old) {
-		el->ce = new;
+	if (el->ce == parent) {
+		el->ce = def;
+	} else if (el->ce == def) {
+		el->ce = parent;
 	}
 
 	return ZEND_HASH_APPLY_KEEP;
@@ -324,39 +308,40 @@ static inline int php_componere_relink_constant(zval *zv, int argc, va_list list
 
 static int php_componere_relink_class(zval *zv, int argc, va_list list, zend_hash_key *key) {
 	zend_class_entry *el = Z_CE_P(zv);
-	zend_class_entry *new = va_arg(list, zend_class_entry*);
-	zend_class_entry *old = va_arg(list, zend_class_entry*);
+	zend_class_entry *def = va_arg(list, zend_class_entry*);
+	zend_class_entry *parent = va_arg(list, zend_class_entry*);
 
-	if ((old->type == ZEND_USER_CLASS) &&
-	    !(old->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_TRAIT))) {
-		zend_hash_apply_with_arguments(&el->function_table, 
+	if ((parent->type == ZEND_USER_CLASS) &&
+	    !(parent->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_TRAIT))) {
+		zend_hash_apply_with_arguments(
+			&el->function_table, 
 			php_componere_relink_function,
 			2,
-			new, old);
+			def, parent);
 
 		zend_hash_apply_with_arguments(
 			&el->properties_info, 
 			php_componere_relink_property,
 			2,
-			new, old);
+			def, parent);
 
 #if PHP_VERSION_ID >= 70100
 		zend_hash_apply_with_arguments(
 			&el->constants_table, 
 			php_componere_relink_constant,
 			2,
-			new, old);
+			def, parent);
 #endif
 
-		if (el->parent == old) {
-			el->parent = new;
+		if (el->parent == parent) {
+			el->parent = def;
 		}
 	}
 
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-static zend_always_inline void php_componere_relink_objects(zend_objects_store *objects, zend_class_entry *new, zend_class_entry *old) {
+static zend_always_inline void php_componere_relink_objects(zend_objects_store *objects, zend_class_entry *def, zend_class_entry *parent) {
 	if (objects->top > 1) {
 		uint32_t it = 1,
 			 end = objects->top;
@@ -365,8 +350,8 @@ static zend_always_inline void php_componere_relink_objects(zend_objects_store *
 			zend_object *object = objects->object_buckets[it];
 
 			if (IS_OBJ_VALID(object)) {
-				if (object->ce == old) {
-					object->ce = new;
+				if (object->ce == parent) {
+					object->ce = def;
 				} else if (instanceof_function(object->ce, zend_ce_closure)) {
 					zend_closure_t *closure = (zend_closure_t*) object;
 
@@ -374,8 +359,8 @@ static zend_always_inline void php_componere_relink_objects(zend_objects_store *
 						memset(closure->func.op_array.run_time_cache, 0, closure->func.op_array.cache_size);
 					}
 
-					if (closure->called_scope == old) {
-						closure->called_scope = new;
+					if (closure->called_scope == parent) {
+						closure->called_scope = def;
 					}
 				}
 			}
@@ -494,37 +479,7 @@ PHP_METHOD(Definition, __construct)
 
 			o->saved = pce;
 		} else {
-			zend_class_entry *base = zend_lookup_class(name);
-
-			if (base) {
-				php_componere_definition_copy(o->ce, base);
-
-				php_componere_definition_inherit(o->ce, pce);
-				{
-					zend_property_info *info;
-
-					ZEND_HASH_FOREACH_PTR(&o->ce->properties_info, info) {
-						uint32_t access = (info->flags & ZEND_ACC_PPP_MASK);
-
-						info->flags &= ~ZEND_ACC_SHADOW;
-						
-						if (access & ZEND_ACC_PRIVATE) {
-							info->flags |= ZEND_ACC_PRIVATE;
-						} else if (access & ZEND_ACC_PROTECTED) {
-							info->flags |= ZEND_ACC_PROTECTED;
-						} else {
-							info->flags |= ZEND_ACC_PUBLIC;
-						}
-					} ZEND_HASH_FOREACH_END();
-				}
-
-				/* this is where it all goes wrong */
-				//o->saved = base;
-				
-				o->ce->ce_flags |= ZEND_ACC_CONSTANTS_UPDATED;
-			} else {
-				php_componere_definition_inherit(o->ce, pce);
-			}
+			php_componere_definition_inherit(o->ce, pce);
 		}
 	}
 
@@ -585,6 +540,26 @@ PHP_METHOD(Definition, register)
 		zend_string_release(name);
 		return;
 	}
+
+	zend_hash_apply_with_arguments(
+		&o->ce->function_table,
+		php_componere_relink_function, 2,
+		o->ce,
+		o->saved);
+
+	zend_hash_apply_with_arguments(
+		&o->ce->properties_info,
+		php_componere_relink_property, 2,
+		o->ce,
+		o->saved);
+
+#if PHP_VERSION_ID >= 70100
+	zend_hash_apply_with_arguments(
+		&o->ce->constants_table,
+		php_componere_relink_constant, 2,
+		o->ce,
+		o->saved);
+#endif
 
 	if (o->saved) {
 		php_componere_relink_frames(EG(current_execute_data));
