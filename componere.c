@@ -91,6 +91,8 @@ PHP_RINIT_FUNCTION(componere)
 	PHP_RINIT(Componere_Value)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RINIT(Componere_Reflection)(INIT_FUNC_ARGS_PASSTHRU);
 
+	CG(compiler_options) |= ZEND_COMPILE_GUARDS;
+
 	return SUCCESS;
 }
 /* }}} */

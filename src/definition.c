@@ -596,29 +596,6 @@ ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_method, 0, 0, 2)
 	ZEND_ARG_INFO(0, method)
 ZEND_END_ARG_INFO()
 
-static zend_always_inline zend_bool php_componere_guard_check(zend_objects_store *objects, php_componere_definition_t *def) {
-	uint32_t id = 0,
-		 end = objects->top;
-	
-	if (objects->top > 1) {
-		uint32_t it = 1,
-			 end = objects->top;
-
-		while (it < end) {
-			zend_object *object = objects->object_buckets[it];
-
-			if (IS_OBJ_VALID(object)) {
-				if (object->ce == def->saved) {
-					return object->ce->ce_flags & ZEND_ACC_USE_GUARDS;
-				}
-			}
-			it++;
-		}
-	}
-	
-	return 1;
-}
-
 PHP_METHOD(Definition, addMethod)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
@@ -654,31 +631,15 @@ PHP_METHOD(Definition, addMethod)
 	} else if (zend_string_equals_literal_ci(name, "__clone")) {
 		o->ce->clone = function;
 	} else if (zend_string_equals_literal_ci(name, "__get")) {
-		if (!php_componere_guard_check(&EG(objects_store), o)) {
-			php_componere_throw("cannot add __get to a class that is in use");
-			return;
-		}
 		o->ce->__get = function;
 		o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 	} else if (zend_string_equals_literal_ci(name, "__set")) {
-		if (!php_componere_guard_check(&EG(objects_store), o)) {
-			php_componere_throw("cannot add __set to a class that is in use");
-			return;
-		}
 		o->ce->__set = function;
 		o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 	} else if (zend_string_equals_literal_ci(name, "__unset")) {
-		if (!php_componere_guard_check(&EG(objects_store), o)) {
-			php_componere_throw("cannot add __unset to a class that is in use");
-			return;
-		}
 		o->ce->__unset = function;
 		o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 	} else if (zend_string_equals_literal_ci(name, "__isset")) {
-		if (!php_componere_guard_check(&EG(objects_store), o)) {
-			php_componere_throw("cannot add __isset to a class that is in use");
-			return;
-		}
 		o->ce->__isset = function;
 		o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 	} else if (zend_string_equals_literal_ci(name, "__call")) {
