@@ -2,7 +2,7 @@
 name and parent must not be the same class
 --FILE--
 <?php
-class Foo extends DateTime {
+class Foo {
 	
 }
 
