@@ -366,7 +366,7 @@ static zend_always_inline void php_componere_relink_frames(zend_execute_data *ex
 				memset(EX(func)->op_array.run_time_cache, 0, EX(func)->op_array.cache_size);
 			}
 		}
-	} while (execute_data = EX(prev_execute_data));
+	} while ((execute_data = EX(prev_execute_data)));
 }
 
 static inline void php_componere_definition_destroy(zend_object *zo) {
@@ -733,8 +733,6 @@ ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_property, 0, 0, 2)
 ZEND_END_ARG_INFO()
 
 static zend_always_inline zend_bool php_componere_property_check(zend_objects_store *objects, php_componere_definition_t *def) {
-	uint32_t id = 0,
-		 end = objects->top;
 	
 	if (objects->top > 1) {
 		uint32_t it = 1,
