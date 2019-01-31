@@ -10,7 +10,7 @@ if test "$PHP_COMPONERE" != "no"; then
   PHP_VERSION=$($PHP_CONFIG --vernum)
 
   if test $PHP_VERSION -lt 70100; then
-    AC_MSG_ERROR([pcov supports PHP 7.1+])
+    AC_MSG_ERROR([componere supports PHP 7.1+])
   else
     AC_DEFINE(HAVE_COMPONERE, 1, [ Have componere support ])
 

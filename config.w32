@@ -1,6 +1,10 @@
 ARG_ENABLE('componere', 'componere support', 'no');
 
 if (PHP_COMPONERE != 'no') {
+        if (PHP_VERSION < 7 || PHP_VERSION >= 7 && PHP_MINOR_VERSION < 1) {
+		ERROR("Componere supports PHP 7.1+");
+	}
+
 	AC_DEFINE('HAVE_COMPONERE', 1, 'componere support enabled');
 
 	EXTENSION('componere', 'componere.c', null, 
