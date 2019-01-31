@@ -36,20 +36,17 @@ zend_string *php_componere_name_function;
 
 static inline void php_componere_optimizer_adjust()
 {
-	zend_string *key = zend_string_init(ZEND_STRL("opcache.optimization_level"), 0);
+	zend_string *key = zend_string_init(ZEND_STRL("opcache.optimization_level"), 0),
+		    *value = NULL;
 	zend_long optimizer = INI_INT("opcache.optimization_level");
-	zend_string *value = strpprintf(0, "0x%08X", 
-		(unsigned int) optimizer);
 
-	if (optimizer & (1<<0)) { /* PASS 1 */
-		/* disable constant substitution block pass */
-		ZSTR_VAL(value)[ZSTR_LEN(value)] = 'E';
-	}
+	/* disable constant substitution block pass */
+	optimizer &= ~1;
 
-	if (optimizer & (1<<10)) { /* PASS 11 */
-		/* disable merging constants */
-		ZSTR_VAL(value)[ZSTR_LEN(value)-2] = 'E';
-	}
+	/* disable merging constants */
+	optimizer &= ~(1<<10);
+
+	value = strpprintf(0, "0x%08X", (unsigned int) optimizer);
 
 	zend_alter_ini_entry(key, value, PHP_INI_SYSTEM, PHP_INI_STAGE_ACTIVATE);
 
