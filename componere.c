@@ -37,18 +37,24 @@ zend_string *php_componere_name_function;
 static inline void php_componere_optimizer_adjust()
 {
 	zend_string *key = zend_string_init(ZEND_STRL("opcache.optimization_level"), 0);
-	zend_string *value;
-	zend_long optimizer = zend_ini_long(ZSTR_VAL(key), ZSTR_LEN(key), 0);
-	
-	if (optimizer) {
-		/* @TODO(krakjoe) better */
-		value = zend_string_init(ZEND_STRL("0x7fffff0ff"), 0);
+	zend_long optimizer = INI_INT("opcache.optimization_level");
+	zend_string *value = strpprintf(0, "0x%08X", 
+		(unsigned int) optimizer);
 
-		zend_alter_ini_entry(key, value, PHP_INI_SYSTEM, PHP_INI_STAGE_ACTIVATE);
-
-		zend_string_release(value);
+	if (optimizer & (1<<0)) { /* PASS 1 */
+		/* disable constant substitution block pass */
+		ZSTR_VAL(value)[ZSTR_LEN(value)] = 'E';
 	}
+
+	if (optimizer & (1<<10)) { /* PASS 11 */
+		/* disable merging constants */
+		ZSTR_VAL(value)[ZSTR_LEN(value)-2] = 'E';
+	}
+
+	zend_alter_ini_entry(key, value, PHP_INI_SYSTEM, PHP_INI_STAGE_ACTIVATE);
+
 	zend_string_release(key);
+	zend_string_release(value);
 }
 
 PHP_MINIT_FUNCTION(componere)
@@ -91,7 +97,11 @@ PHP_RINIT_FUNCTION(componere)
 	PHP_RINIT(Componere_Value)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RINIT(Componere_Reflection)(INIT_FUNC_ARGS_PASSTHRU);
 
-	CG(compiler_options) |= ZEND_COMPILE_GUARDS;
+	CG(compiler_options) |= ZEND_COMPILE_GUARDS | 
+#ifdef ZEND_COMPILE_NO_PERSISTENT_CONSTANT_SUBSTITUTION
+				ZEND_COMPILE_NO_PERSISTENT_CONSTANT_SUBSTITUTION |
+#endif
+				ZEND_COMPILE_NO_CONSTANT_SUBSTITUTION;
 
 	return SUCCESS;
 }
