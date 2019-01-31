@@ -868,6 +868,57 @@ PHP_METHOD(Definition, addConstant)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Definition, setConstant)
+{
+	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
+	zend_string *name = NULL;
+	zval *value;
+	zend_constant *constant;
+
+	if (php_componere_parse_parameters("SO", &name, &value, php_componere_value_ce) != SUCCESS) {
+		php_componere_wrong_parameters("name and value expected");
+		return;
+	}
+
+	if (o->registered) {
+		php_componere_throw(
+			"%s is already registered, cannot set constant %s", 
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+		return;
+	}
+
+	if (!zend_hash_exists(&o->ce->constants_table, name)) {
+		php_componere_throw(
+			"%s::%s is not declared",
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+		return;
+	}
+
+	if (php_componere_value_access(value) & ZEND_ACC_STATIC) {
+		php_componere_throw(
+			"%s::%s cannot be declared static", 
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+		return;
+	}
+
+	if (Z_ISUNDEF_P(php_componere_value_default(value))) {
+		php_componere_throw(
+			"%s::%s cannot be undefined",
+			ZSTR_VAL(o->ce->name), ZSTR_VAL(name));
+		return;
+	}
+
+	constant = zend_hash_find_ptr(&o->ce->constants_table, name);
+
+	if (Z_REFCOUNTED(constant->value)) {
+		zval_ptr_dtor(&constant->value);
+	}
+
+	ZVAL_COPY(&constant->value, php_componere_value_default(value));
+
+	RETURN_ZVAL(getThis(), 1, 0);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_closure, 0, 0, 1)
 	ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO()
@@ -964,6 +1015,7 @@ static zend_function_entry php_componere_definition_methods[] = {
 	PHP_ME(Definition, __construct, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addProperty, php_componere_definition_property, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, setConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, getClosure, php_componere_definition_closure, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, getClosures, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, register, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
