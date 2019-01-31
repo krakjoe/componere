@@ -449,6 +449,12 @@ PHP_METHOD(Definition, __construct)
 		}
 	}
 
+	if (name && parent && zend_string_equals_ci(name, parent)) {
+		php_componere_throw_ex(InvalidArgumentException,
+			"name and parent cannot refer to the same class");
+		return;
+	}
+
 	o->ce->type = ZEND_USER_CLASS;
 	o->ce->name = zend_string_copy(name);
 
