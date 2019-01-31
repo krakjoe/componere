@@ -106,7 +106,6 @@ static inline void php_componere_definition_method_copy(zval *zv) {
 	Z_PTR_P(zv) = child;
 }
 
-#if PHP_VERSION_ID >= 70100
 static inline void php_componere_definition_constant_copy(zval *zv) {
 	zend_class_constant *constant = Z_PTR_P(zv);
 	zend_class_constant *child = (zend_class_constant*)
@@ -122,11 +121,6 @@ static inline void php_componere_definition_constant_copy(zval *zv) {
 
 	Z_PTR_P(zv) = child;
 }
-#else
-static inline void php_componere_definition_constant_copy(zval *zv) {
-	ZVAL_DUP(zv, zv);
-}
-#endif
 
 static inline void php_componere_definition_magic(zend_class_entry *ce, zend_class_entry *parent)
 {
@@ -290,7 +284,6 @@ static inline int php_componere_relink_property(zval *zv, int argc, va_list list
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-#if PHP_VERSION_ID >= 70100
 static inline int php_componere_relink_constant(zval *zv, int argc, va_list list, zend_hash_key *key) {
 	zend_class_constant *el = Z_PTR_P(zv);
 	zend_class_entry    *def = va_arg(list, zend_class_entry*);
@@ -304,7 +297,6 @@ static inline int php_componere_relink_constant(zval *zv, int argc, va_list list
 
 	return ZEND_HASH_APPLY_KEEP;
 }
-#endif
 
 static int php_componere_relink_class(zval *zv, int argc, va_list list, zend_hash_key *key) {
 	zend_class_entry *el = Z_CE_P(zv);
@@ -325,13 +317,11 @@ static int php_componere_relink_class(zval *zv, int argc, va_list list, zend_has
 			2,
 			def, parent);
 
-#if PHP_VERSION_ID >= 70100
 		zend_hash_apply_with_arguments(
 			&el->constants_table, 
 			php_componere_relink_constant,
 			2,
 			def, parent);
-#endif
 
 		if (el->parent == parent) {
 			el->parent = def;
@@ -559,13 +549,11 @@ PHP_METHOD(Definition, register)
 		o->ce,
 		o->saved);
 
-#if PHP_VERSION_ID >= 70100
 	zend_hash_apply_with_arguments(
 		&o->ce->constants_table,
 		php_componere_relink_constant, 2,
 		o->ce,
 		o->saved);
-#endif
 
 	if (o->saved) {
 		php_componere_relink_frames(EG(current_execute_data));
@@ -855,15 +843,11 @@ PHP_METHOD(Definition, addConstant)
 		return;
 	}
 
-#if PHP_VERSION_ID >= 70100
+
 	zend_declare_class_constant_ex(
 		o->ce, name, 
 		php_componere_value_default(value),
 		php_componere_value_access(value), NULL);
-#else
-	zend_declare_class_constant(o->ce, ZSTR_VAL(name), ZSTR_LEN(name), 
-		php_componere_value_default(value));
-#endif
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
