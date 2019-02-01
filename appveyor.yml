@@ -29,26 +29,6 @@ cache:
 environment:
         BIN_SDK_VER: 2.1.1
         matrix:
-                - PHP_VER: 7.0.28
-                  ARCH: x64
-                  VC: vc14
-                  TS: 0
-                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                - PHP_VER: 7.0.28
-                  ARCH: x64
-                  VC: vc14
-                  TS: 1
-                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                - PHP_VER: 7.0.28
-                  ARCH: x86
-                  VC: vc14
-                  TS: 0
-                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                - PHP_VER: 7.0.28
-                  ARCH: x86
-                  VC: vc14
-                  TS: 1
-                  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
                 - PHP_VER: 7.1.15
                   ARCH: x64
                   VC: vc14

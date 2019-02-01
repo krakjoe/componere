@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018                                       |
+  | Copyright (c) Joe Watkins 2018-2019                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -105,8 +105,6 @@ PHP_METHOD(Patch, __construct)
 	} else {
 		php_componere_definition_inherit(o->ce, pce);
 	}
-
-	php_componere_definition_parent(o->ce, pce);
 
 	o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 	o->saved = pce;

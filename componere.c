@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018                                       |
+  | Copyright (c) Joe Watkins 2018-2019                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -32,21 +32,26 @@
 #include <src/reflection.h>
 #include <src/value.h>
 
+zend_string *php_componere_name_function;
+
 static inline void php_componere_optimizer_adjust()
 {
-	zend_string *key = zend_string_init(ZEND_STRL("opcache.optimization_level"), 0);
-	zend_string *value;
-	zend_long optimizer = zend_ini_long(ZSTR_VAL(key), ZSTR_LEN(key), 0);
-	
-	if (optimizer) {
-		/* @TODO(krakjoe) better */
-		value = zend_string_init(ZEND_STRL("0x7fffff0ff"), 0);
+	zend_string *key = zend_string_init(ZEND_STRL("opcache.optimization_level"), 0),
+		    *value = NULL;
+	zend_long optimizer = INI_INT("opcache.optimization_level");
 
-		zend_alter_ini_entry(key, value, PHP_INI_SYSTEM, PHP_INI_STAGE_ACTIVATE);
+	/* disable constant substitution block pass */
+	optimizer &= ~1;
 
-		zend_string_release(value);
-	}
+	/* disable merging constants */
+	optimizer &= ~(1<<10);
+
+	value = strpprintf(0, "0x%08X", (unsigned int) optimizer);
+
+	zend_alter_ini_entry(key, value, PHP_INI_SYSTEM, PHP_INI_STAGE_ACTIVATE);
+
 	zend_string_release(key);
+	zend_string_release(value);
 }
 
 PHP_MINIT_FUNCTION(componere)
@@ -56,6 +61,20 @@ PHP_MINIT_FUNCTION(componere)
 	PHP_MINIT(Componere_Method)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_MINIT(Componere_Value)(INIT_FUNC_ARGS_PASSTHRU);
 
+#ifndef ZSTR_KNOWN
+	php_componere_name_function = zend_string_init(ZEND_STRL("function"), 1);
+#else
+	php_componere_name_function = ZSTR_KNOWN(ZEND_STR_FUNCTION);
+#endif
+
+	return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(componere)
+{
+#ifndef ZSTR_KNOWN
+	zend_string_release(php_componere_name_function);
+#endif
 	return SUCCESS;
 }
 
@@ -74,6 +93,12 @@ PHP_RINIT_FUNCTION(componere)
 	PHP_RINIT(Componere_Method)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RINIT(Componere_Value)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RINIT(Componere_Reflection)(INIT_FUNC_ARGS_PASSTHRU);
+
+	CG(compiler_options) |= ZEND_COMPILE_GUARDS | 
+#ifdef ZEND_COMPILE_NO_PERSISTENT_CONSTANT_SUBSTITUTION
+				ZEND_COMPILE_NO_PERSISTENT_CONSTANT_SUBSTITUTION |
+#endif
+				ZEND_COMPILE_NO_CONSTANT_SUBSTITUTION;
 
 	return SUCCESS;
 }
@@ -144,7 +169,7 @@ zend_module_entry componere_module_entry = {
 	"componere",
 	componere_functions,
 	PHP_MINIT(componere),
-	NULL,
+	PHP_MSHUTDOWN(componere),
 	PHP_RINIT(componere),
 	NULL,
 	PHP_MINFO(componere),

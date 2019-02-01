@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018                                       |
+  | Copyright (c) Joe Watkins 2018-2019                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -34,6 +34,10 @@
 zend_class_entry *php_componere_method_ce;
 zend_object_handlers php_componere_method_handlers;
 
+extern zend_string* php_componere_name_function;
+
+#define ZEND_ACC_CHECK(f, a) (((f)->common.fn_flags & (a)))
+
 static inline zend_object* php_componere_method_create(zend_class_entry *ce) {
 	php_componere_method_t *o = 
 		(php_componere_method_t*) 
@@ -55,12 +59,12 @@ static inline zend_object* php_componere_method_clone(zval *object) {
 
 	o->function = (zend_function*) 
 		zend_arena_alloc(&CG(arena), sizeof(zend_op_array));
-	
+
 	memcpy(o->function, 
 		php_componere_method_function(object), sizeof(zend_op_array));
 
 	o->function->common.scope = NULL;
-	o->function->common.fn_flags &= ~ ZEND_ACC_CLOSURE;
+	o->function->common.function_name = zend_string_copy(php_componere_name_function);
 
 	function_add_ref(o->function);
 
@@ -74,6 +78,9 @@ static inline void php_componere_method_destroy(zend_object *zo) {
 
 	if (o->function) {
 		destroy_zend_function(o->function);
+
+		if (o->function->common.function_name)
+			zend_string_release(o->function->common.function_name);
 	}
 
 	if (!Z_ISUNDEF(o->reflector)) {
@@ -103,8 +110,14 @@ PHP_METHOD(Method, __construct)
 		(zend_function*) (((char*)Z_OBJ_P(closure)) + sizeof(zend_object)), 
 		sizeof(zend_op_array));
 
-	o->function->common.scope = NULL;
-	o->function->common.fn_flags &= ~ ZEND_ACC_CLOSURE;
+	o->function->op_array.function_name = zend_string_copy(php_componere_name_function);
+	o->function->op_array.refcount = NULL;
+	o->function->op_array.scope = NULL;
+	o->function->op_array.prototype = NULL;
+	o->function->op_array.fn_flags = 
+		(o->function->op_array.fn_flags & ZEND_ACC_STATIC) ?
+			(ZEND_ACC_STATIC|ZEND_ACC_PUBLIC) :
+			(ZEND_ACC_PUBLIC);
 
 	function_add_ref(o->function);
 }
@@ -115,7 +128,7 @@ PHP_METHOD(Method, setProtected)
 
 	php_componere_no_parameters();
 
-	if (o->function->common.fn_flags & ZEND_ACC_PPP_MASK) {
+	if (ZEND_ACC_CHECK(o->function, ZEND_ACC_PROTECTED|ZEND_ACC_PRIVATE)) {
 		php_componere_throw_ex(RuntimeException, "access level already set");
 		return;
 	}
@@ -131,7 +144,7 @@ PHP_METHOD(Method, setPrivate)
 
 	php_componere_no_parameters();
 
-	if (o->function->common.fn_flags & ZEND_ACC_PPP_MASK) {
+	if (ZEND_ACC_CHECK(o->function, ZEND_ACC_PRIVATE|ZEND_ACC_PROTECTED)) {
 		php_componere_throw_ex(RuntimeException, "access level already set");
 		return;
 	}
@@ -148,6 +161,17 @@ PHP_METHOD(Method, setStatic)
 	php_componere_no_parameters();
 
 	o->function->common.fn_flags |= ZEND_ACC_STATIC;
+
+	RETURN_ZVAL(getThis(), 1, 0);
+}
+
+PHP_METHOD(Method, setFinal)
+{
+	php_componere_method_t *o = php_componere_method_fetch(getThis());
+
+	php_componere_no_parameters();
+
+	o->function->common.fn_flags |= ZEND_ACC_FINAL;
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
@@ -177,6 +201,7 @@ static zend_function_entry php_componere_method_methods[] = {
 	PHP_ME(Method, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Method, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
+	PHP_ME(Method, setFinal, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 
 	PHP_ME(Method, getReflector, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_FE_END

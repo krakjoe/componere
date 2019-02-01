@@ -1,5 +1,5 @@
 --TEST--
-Method final access (1)
+Method access (1)
 --FILE--
 <?php
 use Componere\Method;

@@ -6,12 +6,12 @@ use Componere\Definition;
 use Componere\Method;
 
 class A {
-	/**
+	/**1
 	* @comment
 	**/
 	public $p = 1;
 	static $s = 2;
-	/**
+	/**2
 	* @comment
 	**/
 	const  C  = 3;
