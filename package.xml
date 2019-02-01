@@ -23,10 +23,10 @@
   <email>remi@php.net</email>
   <active>yes</active>
  </lead>
- <date>2018-03-14</date>
+ <date>2019-02-01</date>
  <version>
-  <release>2.1.3</release>
-  <api>2.1.3</api>
+  <release>3.0.0</release>
+  <api>3.0.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -34,7 +34,18 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- initial pecl release
+- Fix #9 crash collecting coverage with phpdbg
+- Fix #10 prototype incorrectly set causing incorrect scope detection
+- Fix #11 Method::setFinal
+- Fix #12 Method names reflection
+- Fix #13 Assertion failure in zend_function_dtor
+- Fix #14 Unexpected trait behaviour
+- Fix #7 Inheritance tree broken by registering new classes
+- Fix #15 Classes not being restored on definition destruction
+- Fix #16 Constant AST not updated
+- Fix #18 unexpected behaviour when name and parent refer to same class
+- Definition::setConstant
+- Drop 7.0 support
  </notes>
  <contents>
   <dir name="/">
@@ -157,13 +168,23 @@
     <file name="095.phpt" role="test" />
     <file name="096.phpt" role="test" />
     <file name="097.phpt" role="test" />
+    <file name="098.phpt" role="test" />
+    <file name="099.phpt" role="test" />
+    <file name="100.phpt" role="test" />
+    <file name="101.phpt" role="test" />
+    <file name="102.phpt" role="test" />
+    <file name="103.phpt" role="test" />
+    <file name="104.phpt" role="test" />
+    <file name="105.phpt" role="test" />
+    <file name="106.phpt" role="test" />
+    <file name="107.phpt" role="test" />
    </dir> <!-- tests -->
   </dir>
  </contents>
  <dependencies>
   <required>
    <php>
-    <min>7.0.0</min>
+    <min>7.1.0</min>
    </php>
    <pearinstaller>
     <min>1.10</min>
