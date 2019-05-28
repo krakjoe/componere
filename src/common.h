@@ -48,41 +48,76 @@ static inline void php_componere_destroy_class(zend_class_entry *ce) {
 }
 
 #define php_componere_deny_throw(o, r) do { \
-	php_componere_throw("objects of type %s do not support " #r, ZSTR_VAL(Z_OBJCE_P((o))->name)); \
+	php_componere_throw("objects of type %s do not support " #r, ZSTR_VAL((o)->ce->name)); \
 } while(0)
 
-static inline zend_object* php_componere_deny_clone(zval *object) {
+#if PHP_VERSION_ID >= 80000
+static inline zend_object* php_componere_deny_clone(zend_object *object) {
+#else
+static inline zend_object* php_componere_deny_clone(zval *zo) {
+    zend_object *object = Z_OBJ_P(zo);
+#endif
 	php_componere_deny_throw(object, cloning);
-	Z_ADDREF_P(object);
-	return Z_OBJ_P(object);
+	GC_ADDREF(object);
+	return object;
 }
 
-static inline void php_componere_deny_write(zval *object, zval *member) {
+#if PHP_VERSION_ID >= 80000
+static inline void php_componere_deny_write(zend_object *object, zend_string *member) {
+#else
+static inline void php_componere_deny_write(zval *zo, zval *member) {
+    zend_object *object = Z_OBJ_P(zo);
+#endif
 	php_componere_deny_throw(object, properties);
 }
 
-static inline zval* php_componere_deny_ptr(zval *object) {
+#if PHP_VERSION_ID >= 80000
+static inline zval* php_componere_deny_ptr(zend_object *object) {
+#else
+static inline zval* php_componere_deny_ptr(zval *zo) {
+    zend_object *object = Z_OBJ_P(zo);
+#endif
 	php_componere_deny_throw(object, properties);
 	return NULL;
 }
 
-static inline zval* php_componere_deny_read(zval *object, zval *member) {
+#if PHP_VERSION_ID >= 80000
+static inline zval* php_componere_deny_read(zend_object *object, zend_string *member) {
+#else
+static inline zval* php_componere_deny_read(zval *zo, zval *member) {
+    zend_object *object = Z_OBJ_P(zo);
+#endif
 	php_componere_deny_throw(object, properties);
 	return &EG(uninitialized_zval);
 }
 
-static inline int php_componere_deny_isset(zval *object, zval *member, int has_set_exists) {
+#if PHP_VERSION_ID >= 80000
+static inline int php_componere_deny_isset(zend_object *object, zend_string *member, int has_set_exists) {
+#else
+static inline int php_componere_deny_isset(zval *zo, zval *member, int has_set_exists) {
+    zend_object *object = Z_OBJ_P(zo);
+#endif
 	if (has_set_exists != 2) {
 		php_componere_deny_throw(object, properties);
 	}
 	return 0;
 }
 
-static inline void php_componere_deny_unset(zval *object, zval *member) {
+#if PHP_VESRION_ID >= 80000
+static inline void php_componere_deny_unset(zend_object *object, zend_string *member) {
+#else
+static inline void php_componere_deny_unset(zval *zo, zval *member) {
+    zend_object *object = Z_OBJ_P(zo);
+#endif
 	php_componere_deny_throw(object, properties);
 }
 
-static inline HashTable* php_componere_deny_debug(zval *object, int *temp) {
+#if PHP_VERSION_ID >= 80000
+static inline HashTable* php_componere_deny_debug(zend_object *object, int *temp) {
+#else
+static inline HashTable* php_componere_deny_debug(zval *zo, int *temp) {
+    zend_object *object = Z_OBJ_P(zo);
+#endif
 	HashTable *table;
 
 	ALLOC_HASHTABLE(table);
@@ -94,7 +129,11 @@ static inline HashTable* php_componere_deny_debug(zval *object, int *temp) {
 	return table;
 }
 
+#if PHP_VERSION_ID >= 80000
+static inline HashTable* php_componere_deny_collect(zend_object *object, zval **table, int *num) {
+#else
 static inline HashTable* php_componere_deny_collect(zval *object, zval **table, int *num) {
+#endif
 	*table = NULL;
 	*num   = 0;
 
