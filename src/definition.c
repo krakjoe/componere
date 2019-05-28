@@ -171,13 +171,18 @@ inline void php_componere_definition_parent(zend_class_entry *ce, zend_class_ent
 inline void php_componere_definition_inherit(zend_class_entry *ce, zend_class_entry *parent) {
 	zend_bool is_final = parent->ce_flags & ZEND_ACC_FINAL;
 
+#if PHP_VERSION_ID >= 70400
+    ce->ce_flags &= ~ZEND_ACC_LINKED;
+#endif
 	parent->ce_flags &= ~ ZEND_ACC_FINAL;
-
 	zend_do_inheritance(ce, parent);
 
 	if (is_final) {
 		parent->ce_flags |= ZEND_ACC_FINAL;
 	}
+#if PHP_VERSION_ID >= 70400
+    ce->ce_flags |= ZEND_ACC_LINKED;
+#endif
 }
 
 inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent)
@@ -215,9 +220,22 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 			ZVAL_DUP(&ce->default_static_members_table[i], &parent->default_static_members_table[i]);
 		}
 
+#if PHP_VERSION_ID >= 70400
+        if (ce->ce_flags & ZEND_ACC_IMMUTABLE) {
+            ZEND_MAP_PTR_NEW(ce->static_members_table);
+        } else {
+            ZEND_MAP_PTR_INIT(ce->static_members_table, &ce->default_static_members_table);
+        }
+#else
 		ce->static_members_table = ce->default_static_members_table;
+#endif
 		ce->default_static_members_count = parent->default_static_members_count;
 	}
+#if PHP_VERSION_ID >= 70400
+    else {
+        ZEND_MAP_PTR_INIT(ce->static_members_table, &ce->default_static_members_table);
+    }
+#endif
 
 	if (zend_hash_num_elements(&parent->properties_info)) {
 		zend_hash_copy(
@@ -244,6 +262,9 @@ inline void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry
 
 	ce->ce_flags     |= parent->ce_flags;
 	ce->ce_flags     &= ~ZEND_ACC_CONSTANTS_UPDATED;
+#if PHP_VERSION_ID >= 70400
+    ce->ce_flags     &= ~ZEND_ACC_LINKED;
+#endif
 	ce->parent        = parent->parent;
 
 	ce->create_object              = parent->create_object;
@@ -262,9 +283,15 @@ static int php_componere_relink_function(zval *zv, int argc, va_list list, zend_
 			el->common.scope = def;
 		}
 
+#if PHP_VERSION_ID >= 70400
+        if (RUN_TIME_CACHE(&el->op_array)) {
+            memset(RUN_TIME_CACHE(&el->op_array), 0, el->op_array.cache_size);
+        }
+#else
 		if (el->op_array.run_time_cache) {
 			memset(el->op_array.run_time_cache, 0, el->op_array.cache_size);
 		}
+#endif
 	}
 
 	return ZEND_HASH_APPLY_KEEP;
@@ -345,9 +372,15 @@ static zend_always_inline void php_componere_relink_objects(zend_objects_store *
 				} else if (instanceof_function(object->ce, zend_ce_closure)) {
 					zend_closure_t *closure = (zend_closure_t*) object;
 
+#if PHP_VERSION_ID >= 70400
+					if (RUN_TIME_CACHE(&closure->func.op_array)) {
+						memset(RUN_TIME_CACHE(&closure->func.op_array), 0, closure->func.op_array.cache_size);
+					}
+#else
 					if (closure->func.op_array.run_time_cache) {
 						memset(closure->func.op_array.run_time_cache, 0, closure->func.op_array.cache_size);
 					}
+#endif
 
 					if (closure->called_scope == parent) {
 						closure->called_scope = def;
@@ -362,9 +395,15 @@ static zend_always_inline void php_componere_relink_objects(zend_objects_store *
 static zend_always_inline void php_componere_relink_frames(zend_execute_data *execute_data) {
 	do {
 		if (EX(func) && EX(func)->type == ZEND_USER_FUNCTION) {
+#if PHP_VERSION_ID >= 70400
+			if (RUN_TIME_CACHE(&EX(func)->op_array)) {
+				memset(RUN_TIME_CACHE(&EX(func)->op_array), 0, EX(func)->op_array.cache_size);
+			}
+#else
 			if (EX(func)->op_array.run_time_cache) {
 				memset(EX(func)->op_array.run_time_cache, 0, EX(func)->op_array.cache_size);
 			}
+#endif
 		}
 	} while ((execute_data = EX(prev_execute_data)));
 }
@@ -478,6 +517,10 @@ PHP_METHOD(Definition, __construct)
 			php_componere_definition_inherit(o->ce, pce);
 		}
 	}
+
+#if PHP_VERSION_ID >= 70400
+    o->ce->ce_flags |= ZEND_ACC_LINKED;
+#endif
 
 	if (pce && pce->type == ZEND_USER_CLASS) {
 		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
@@ -693,8 +736,30 @@ PHP_METHOD(Definition, addTrait)
 		} ZEND_HASH_FOREACH_END();
 	}
 
+#if PHP_VERSION_ID >= 70400
+    {
+        uint32_t num_traits          = o->ce->num_traits;
+        zend_class_name *trait_names = o->ce->trait_names;
+
+        o->ce->trait_names = erealloc(o->ce->trait_names, sizeof(zend_class_name) * (num_traits + 1));
+        o->ce->num_traits = 1;
+
+        o->ce->trait_names[num_traits].name = zend_string_copy(trait->name);
+        o->ce->trait_names[num_traits].lc_name = zend_string_tolower(trait->name);
+
+        o->ce->trait_names += num_traits;
+
+        o->ce->ce_flags |= ZEND_ACC_IMPLEMENT_TRAITS;
+
+        zend_do_link_class(o->ce, NULL);
+
+        o->ce->num_traits  = num_traits + 1;
+        o->ce->trait_names -= num_traits;
+    }
+#else
 	zend_do_implement_trait(o->ce, trait);
 	zend_do_bind_traits(o->ce);
+#endif
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
@@ -792,6 +857,10 @@ PHP_METHOD(Definition, addProperty)
 		php_componere_value_default(value),
 		php_componere_value_access(value)) == SUCCESS) {
 		php_componere_value_addref(value);
+
+#if PHP_VERSION_ID >= 70400
+        zend_do_link_class(o->ce, NULL);
+#endif
 	}
 
 	RETURN_ZVAL(getThis(), 1, 0);
@@ -846,6 +915,10 @@ PHP_METHOD(Definition, addConstant)
 		o->ce, name, 
 		php_componere_value_default(value),
 		php_componere_value_access(value), NULL);
+
+#if PHP_VERSION_ID >= 70400
+    zend_do_link_class(o->ce, NULL);
+#endif
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
