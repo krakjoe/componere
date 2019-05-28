@@ -24,6 +24,10 @@
 #      include <zend_exceptions.h>
 #endif
 
+#ifdef GC_ADDREF
+# define GC_ADDREF(g) ++GC_REFCOUNT(g)
+#endif
+
 #define php_componere_parse_parameters(s, ...) \
 	zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), s, ##__VA_ARGS__)
 #define php_componere_throw_ex(e, s, ...) \
