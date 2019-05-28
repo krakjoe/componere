@@ -24,7 +24,7 @@
 #      include <zend_exceptions.h>
 #endif
 
-#ifdef GC_ADDREF
+#ifndef GC_ADDREF
 # define GC_ADDREF(g) ++GC_REFCOUNT(g)
 #endif
 
