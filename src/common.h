@@ -107,10 +107,10 @@ static inline int php_componere_deny_isset(zval *zo, zval *member, int has_set_e
 	return 0;
 }
 
-#if PHP_VESRION_ID >= 80000
-static inline void php_componere_deny_unset(zend_object *object, zend_string *member) {
+#if PHP_VERSION_ID >= 80000
+static inline void php_componere_deny_unset(zend_object *object, zend_string *member, void **cache) {
 #else
-static inline void php_componere_deny_unset(zval *zo, zval *member) {
+static inline void php_componere_deny_unset(zval *zo, zval *member, void **cache) {
     zend_object *object = Z_OBJ_P(zo);
 #endif
 	php_componere_deny_throw(object, properties);
