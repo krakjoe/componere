@@ -23,9 +23,9 @@
   <email>remi@php.net</email>
   <active>yes</active>
  </lead>
- <date>2019-02-01</date>
+ <date>2019-05-30</date>
  <version>
-  <release>3.0.0</release>
+  <release>3.1.0</release>
   <api>3.0.0</api>
  </version>
  <stability>
@@ -34,18 +34,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Fix #9 crash collecting coverage with phpdbg
-- Fix #10 prototype incorrectly set causing incorrect scope detection
-- Fix #11 Method::setFinal
-- Fix #12 Method names reflection
-- Fix #13 Assertion failure in zend_function_dtor
-- Fix #14 Unexpected trait behaviour
-- Fix #7 Inheritance tree broken by registering new classes
-- Fix #15 Classes not being restored on definition destruction
-- Fix #16 Constant AST not updated
-- Fix #18 unexpected behaviour when name and parent refer to same class
-- Definition::setConstant
-- Drop 7.0 support
+- Add PHP 7.4 support
  </notes>
  <contents>
   <dir name="/">
@@ -194,6 +183,32 @@
  <providesextension>componere</providesextension>
  <extsrcrelease />
  <changelog>
+  <release>
+   <date>2019-02-01</date>
+   <version>
+    <release>3.0.0</release>
+    <api>3.0.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Fix #9 crash collecting coverage with phpdbg
+- Fix #10 prototype incorrectly set causing incorrect scope detection
+- Fix #11 Method::setFinal
+- Fix #12 Method names reflection
+- Fix #13 Assertion failure in zend_function_dtor
+- Fix #14 Unexpected trait behaviour
+- Fix #7 Inheritance tree broken by registering new classes
+- Fix #15 Classes not being restored on definition destruction
+- Fix #16 Constant AST not updated
+- Fix #18 unexpected behaviour when name and parent refer to same class
+- Definition::setConstant
+- Drop 7.0 support
+   </notes>
+  </release>
   <release>
    <date>2018-03-14</date>
    <version>
