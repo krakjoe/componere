@@ -50,18 +50,23 @@ static inline zend_object* php_componere_method_create(zend_class_entry *ce) {
 	return &o->std;
 }
 
-static inline zend_object* php_componere_method_clone(zval *object) {
+#if PHP_VERSION_ID >= 80000
+static inline zend_object* php_componere_method_clone(zend_object *object) {
+#else
+static inline zend_object* php_componere_method_clone(zval *zo) {
+    zend_object *object = Z_OBJ_P(zo);
+#endif
 	php_componere_method_t *o = 
 		(php_componere_method_t*)
 			ecalloc(1, sizeof(php_componere_method_t));
 
-	zend_object_std_init(&o->std, Z_OBJCE_P(object));
+	zend_object_std_init(&o->std, object->ce);
 
 	o->function = (zend_function*) 
 		zend_arena_alloc(&CG(arena), sizeof(zend_op_array));
 
 	memcpy(o->function, 
-		php_componere_method_function(object), sizeof(zend_op_array));
+		php_componere_method_from(object)->function, sizeof(zend_op_array));
 
 	o->function->common.scope = NULL;
 	o->function->common.function_name = zend_string_copy(php_componere_name_function);

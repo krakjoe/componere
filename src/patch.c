@@ -109,6 +109,9 @@ PHP_METHOD(Patch, __construct)
 	o->ce->ce_flags |= ZEND_ACC_USE_GUARDS;
 	o->saved = pce;
 	o->saved->refcount++;
+#if PHP_VERSION_ID >= 70400
+    o->ce->ce_flags |= ZEND_ACC_LINKED;
+#endif
 
 	ZVAL_COPY(&o->instance, pd);
 
@@ -258,6 +261,10 @@ PHP_METHOD(Patch, derive)
 
 	php_componere_definition_copy(r->ce, o->ce);
 	php_componere_definition_parent(r->ce, o->ce);
+
+#if PHP_VERSION_ID >= 70400
+    r->ce->ce_flags |= ZEND_ACC_LINKED;
+#endif
 
 	r->saved = Z_OBJCE_P(instance);
 	r->saved->refcount++;

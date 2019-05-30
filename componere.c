@@ -110,6 +110,7 @@ PHP_MINFO_FUNCTION(componere)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "componere support", "enabled");
+	php_info_print_table_row(2, "componere version", PHP_COMPONERE_VERSION);
 	php_info_print_table_end();
 }
 /* }}} */
