@@ -739,7 +739,6 @@ PHP_METHOD(Definition, addTrait)
 #if PHP_VERSION_ID >= 70400
     {
         uint32_t num_traits          = o->ce->num_traits;
-        zend_class_name *trait_names = o->ce->trait_names;
 
         o->ce->trait_names = erealloc(o->ce->trait_names, sizeof(zend_class_name) * (num_traits + 1));
         o->ce->num_traits = 1;

@@ -120,7 +120,6 @@ static inline void php_componere_deny_unset(zval *zo, zval *member, void **cache
 static inline HashTable* php_componere_deny_debug(zend_object *object, int *temp) {
 #else
 static inline HashTable* php_componere_deny_debug(zval *zo, int *temp) {
-    zend_object *object = Z_OBJ_P(zo);
 #endif
 	HashTable *table;
 
