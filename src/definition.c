@@ -751,7 +751,7 @@ PHP_METHOD(Definition, addTrait)
 
         o->ce->ce_flags |= ZEND_ACC_IMPLEMENT_TRAITS;
 
-        zend_do_link_class(o->ce, NULL);
+        zend_do_link_class(o->ce);
 
         o->ce->num_traits  = num_traits + 1;
         o->ce->trait_names -= num_traits;
@@ -859,7 +859,7 @@ PHP_METHOD(Definition, addProperty)
 		php_componere_value_addref(value);
 
 #if PHP_VERSION_ID >= 70400
-        zend_do_link_class(o->ce, NULL);
+        zend_do_link_class(o->ce);
 #endif
 	}
 
@@ -917,7 +917,7 @@ PHP_METHOD(Definition, addConstant)
 		php_componere_value_access(value), NULL);
 
 #if PHP_VERSION_ID >= 70400
-    zend_do_link_class(o->ce, NULL);
+    zend_do_link_class(o->ce);
 #endif
 
 	RETURN_ZVAL(getThis(), 1, 0);
