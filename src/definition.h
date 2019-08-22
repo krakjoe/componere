@@ -39,4 +39,9 @@ typedef struct _php_componere_definition_t {
 extern void php_componere_definition_inherit(zend_class_entry *ce, zend_class_entry *parent);
 extern void php_componere_definition_copy(zend_class_entry *ce, zend_class_entry *parent);
 extern void php_componere_definition_parent(zend_class_entry *ce, zend_class_entry *parent);
+
+#if PHP_VERSION_ID >= 70400
+extern void php_componere_definition_properties_table_rebuild(zend_class_entry *ce);
+#endif
+
 #endif

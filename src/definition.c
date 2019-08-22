@@ -372,15 +372,17 @@ static zend_always_inline void php_componere_relink_objects(zend_objects_store *
 				} else if (instanceof_function(object->ce, zend_ce_closure)) {
 					zend_closure_t *closure = (zend_closure_t*) object;
 
+                    if (closure->func.type == ZEND_USER_FUNCTION) {
 #if PHP_VERSION_ID >= 70400
-					if (RUN_TIME_CACHE(&closure->func.op_array)) {
-						memset(RUN_TIME_CACHE(&closure->func.op_array), 0, closure->func.op_array.cache_size);
-					}
+					    if (RUN_TIME_CACHE(&closure->func.op_array)) {
+						    memset(RUN_TIME_CACHE(&closure->func.op_array), 0, closure->func.op_array.cache_size);
+					    }
 #else
-					if (closure->func.op_array.run_time_cache) {
-						memset(closure->func.op_array.run_time_cache, 0, closure->func.op_array.cache_size);
-					}
+					    if (closure->func.op_array.run_time_cache) {
+						    memset(closure->func.op_array.run_time_cache, 0, closure->func.op_array.cache_size);
+					    }
 #endif
+                    }
 
 					if (closure->called_scope == parent) {
 						closure->called_scope = def;
@@ -553,9 +555,7 @@ PHP_METHOD(Definition, __construct)
 					break;
 				}
 
-				if (!instanceof_function(o->ce, ce)) {
-					zend_do_implement_interface(o->ce, ce);
-				}
+				zend_do_implement_interface(o->ce, ce);
 			}
 		} ZEND_HASH_FOREACH_END();
 
@@ -565,7 +565,51 @@ PHP_METHOD(Definition, __construct)
 	if (!o->ce->info.user.filename) {
 		o->ce->info.user.filename = name;
 	}
+
+#if PHP_VERSION_ID >= 70400
+    o->ce->ce_flags |= ZEND_ACC_RESOLVED_INTERFACES;
+#endif
 }
+
+#if PHP_VERSION_ID >= 70400
+void php_componere_definition_properties_table_rebuild(zend_class_entry *ce)
+{
+	zend_property_info **table, *prop;
+	size_t size;
+	if (ce->default_properties_count == 0 || ce->properties_info_table) {
+		return;
+	}
+
+	size = sizeof(zend_property_info *) * ce->default_properties_count;
+	if (ce->type == ZEND_USER_CLASS) {
+		ce->properties_info_table = table = zend_arena_alloc(&CG(arena), size);
+	} else {
+		ce->properties_info_table = table = pemalloc(size, 1);
+	}
+
+	/* Dead slots may be left behind during inheritance. Make sure these are NULLed out. */
+	memset(table, 0, size);
+
+	if (ce->parent && ce->parent->default_properties_count != 0) {
+		zend_property_info **parent_table = ce->parent->properties_info_table;
+		memcpy(
+			table, parent_table,
+			sizeof(zend_property_info *) * ce->parent->default_properties_count
+		);
+
+		/* Child did not add any new properties, we are done */
+		if (ce->default_properties_count == ce->parent->default_properties_count) {
+			return;
+		}
+	}
+
+	ZEND_HASH_FOREACH_PTR(&ce->properties_info, prop) {
+		if (prop->ce == ce && (prop->flags & ZEND_ACC_STATIC) == 0) {
+			table[OBJ_PROP_TO_NUM(prop->offset)] = prop;
+		}
+	} ZEND_HASH_FOREACH_END();
+}
+#endif
 
 PHP_METHOD(Definition, register)
 {
@@ -626,6 +670,10 @@ PHP_METHOD(Definition, register)
 	o->registered = 1;
 
 	zend_string_release(name);
+
+#if PHP_VERSION_ID >= 70400
+    php_componere_definition_properties_table_rebuild(o->ce);
+#endif
 }
 
 ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_method, 0, 0, 2)
@@ -750,7 +798,7 @@ PHP_METHOD(Definition, addTrait)
 
         o->ce->ce_flags |= ZEND_ACC_IMPLEMENT_TRAITS;
 
-        zend_do_link_class(o->ce);
+        zend_do_link_class(o->ce, NULL);
 
         o->ce->num_traits  = num_traits + 1;
         o->ce->trait_names -= num_traits;
@@ -787,6 +835,10 @@ PHP_METHOD(Definition, addInterface)
 	if (!instanceof_function(o->ce, interface)) {
 		zend_do_implement_interface(o->ce, interface);
 	}
+
+#if PHP_VERSION_ID >= 70400
+    o->ce->ce_flags |= ZEND_ACC_RESOLVED_INTERFACES;
+#endif
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
@@ -858,7 +910,7 @@ PHP_METHOD(Definition, addProperty)
 		php_componere_value_addref(value);
 
 #if PHP_VERSION_ID >= 70400
-        zend_do_link_class(o->ce);
+        zend_do_link_class(o->ce, NULL);
 #endif
 	}
 
@@ -909,15 +961,10 @@ PHP_METHOD(Definition, addConstant)
 		return;
 	}
 
-
 	zend_declare_class_constant_ex(
 		o->ce, name, 
 		php_componere_value_default(value),
 		php_componere_value_access(value), NULL);
-
-#if PHP_VERSION_ID >= 70400
-    zend_do_link_class(o->ce);
-#endif
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
