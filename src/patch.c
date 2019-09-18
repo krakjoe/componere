@@ -146,6 +146,10 @@ PHP_METHOD(Patch, __construct)
 
 		o->ce->ce_flags &= ~ZEND_ACC_IMPLICIT_ABSTRACT_CLASS;
 	}
+
+#if PHP_VERSION_ID >= 70400
+    o->ce->ce_flags |= ZEND_ACC_RESOLVED_INTERFACES;
+#endif
 }
 
 PHP_METHOD(Patch, apply)
@@ -270,6 +274,14 @@ PHP_METHOD(Patch, derive)
 	r->saved->refcount++;
 
 	ZVAL_COPY(&r->instance, instance);
+
+#if PHP_VERSION_ID >= 70400
+    r->ce->ce_flags |= ZEND_ACC_RESOLVED_INTERFACES;
+#endif
+
+#if PHP_VERSION_ID >= 70400
+    php_componere_definition_properties_table_rebuild(r->ce);
+#endif
 }
 
 static zend_function_entry php_componere_patch_methods[] = {
