@@ -147,11 +147,17 @@ static inline void php_componere_definition_magic(zend_class_entry *ce, zend_cla
 	if (parent->__debugInfo)
 		ce->__debugInfo = php_componere_definition_magic_find(ce, "__debuginfo");
 
+#if PHP_VERSION_ID >= 80000
+	ce->__serialize = php_componere_definition_magic_find(ce, "serialize");
+	ce->__unserialize = php_componere_definition_magic_find(ce, "unserialize");
+#else
 	ce->serialize_func = php_componere_definition_magic_find(ce, "serialize");
 	ce->unserialize_func = php_componere_definition_magic_find(ce, "unserialize");
+#endif
 
 	ce->serialize = parent->serialize;
 	ce->unserialize = parent->unserialize;
+
 #undef php_componere_definition_magic_find
 }
 
@@ -492,6 +498,25 @@ PHP_METHOD(Definition, __construct)
 	zend_initialize_class_data(o->ce, 1);
 
 	pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name);
+
+	if (pce && pce->type == ZEND_USER_CLASS) {
+		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
+
+		if (pce->info.user.doc_comment) {
+			o->ce->info.user.doc_comment = zend_string_copy(pce->info.user.doc_comment);
+		}
+	} else {
+		o->ce->info.user.filename = zend_get_executed_filename_ex();
+		
+		if (o->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
+		} else {
+			o->ce->info.user.filename = zend_string_init(ZEND_STRL("unknown file"), 0);
+		}
+		
+		o->ce->info.user.line_start = zend_get_executed_lineno();
+	}
+
 	if (pce) {
 		if (zend_string_equals_ci(o->ce->name, pce->name)) {
 			if (pce->type != ZEND_USER_CLASS) {
@@ -524,14 +549,6 @@ PHP_METHOD(Definition, __construct)
     o->ce->ce_flags |= ZEND_ACC_LINKED;
 #endif
 
-	if (pce && pce->type == ZEND_USER_CLASS) {
-		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
-
-		if (pce->info.user.doc_comment) {
-			o->ce->info.user.doc_comment = zend_string_copy(pce->info.user.doc_comment);
-		}
-	}
-
 	if (interfaces) {
 		zval *interface = NULL;
 
@@ -562,9 +579,6 @@ PHP_METHOD(Definition, __construct)
 		o->ce->ce_flags &= ~ZEND_ACC_IMPLICIT_ABSTRACT_CLASS;
 	}
 
-	if (!o->ce->info.user.filename) {
-		o->ce->info.user.filename = name;
-	}
 
 #if PHP_VERSION_ID >= 70400
     o->ce->ce_flags |= ZEND_ACC_RESOLVED_INTERFACES;
@@ -736,9 +750,17 @@ PHP_METHOD(Definition, addMethod)
 	} else if (zend_string_equals_literal_ci(name, "__debuginfo")) {
 		o->ce->__debugInfo = function;
 	} else if (zend_string_equals_literal_ci(name, "serialize")) {
+#if PHP_VERSION_ID >= 80000
+		o->ce->__serialize = function;
+#else
 		o->ce->serialize_func = function;
+#endif
 	} else if (zend_string_equals_literal_ci(name, "unserialize")) {
+#if PHP_VERSION_ID >= 80000
+		o->ce->__unserialize = function;
+#else
 		o->ce->unserialize_func = function;
+#endif
 	}
 
 	function->common.scope = o->ce;
@@ -796,7 +818,11 @@ PHP_METHOD(Definition, addTrait)
 
         o->ce->trait_names += num_traits;
 
+#if PHP_VERSION_ID >= 80000
+
+#else
         o->ce->ce_flags |= ZEND_ACC_IMPLEMENT_TRAITS;
+#endif
 
         zend_do_link_class(o->ce, NULL);
 
@@ -903,16 +929,27 @@ PHP_METHOD(Definition, addProperty)
 		return;
 	}
 
-	if (zend_declare_property(o->ce,
+#if PHP_VERSION_ID < 80000
+	if (
+#endif
+	    zend_declare_property(o->ce,
 		ZSTR_VAL(name), ZSTR_LEN(name),
 		php_componere_value_default(value),
-		php_componere_value_access(value)) == SUCCESS) {
+		php_componere_value_access(value)
+#if PHP_VERSION_ID < 80000
+		) == SUCCESS) {
+#else
+		);
+#endif
 		php_componere_value_addref(value);
 
 #if PHP_VERSION_ID >= 70400
-        zend_do_link_class(o->ce, NULL);
+        	zend_do_link_class(o->ce, NULL);
 #endif
+
+#if PHP_VERSION_ID < 80000
 	}
+#endif
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
@@ -1113,7 +1150,7 @@ static zend_function_entry php_componere_definition_abstract_methods[] = {
 };
 
 static zend_function_entry php_componere_definition_methods[] = {
-	PHP_ME(Definition, __construct, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(Definition, __construct, php_componere_ignore_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addProperty, php_componere_definition_property, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, addConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
 	PHP_ME(Definition, setConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)

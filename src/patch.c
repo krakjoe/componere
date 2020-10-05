@@ -42,9 +42,6 @@ static inline zend_object* php_componere_patch_create(zend_class_entry *ce) {
 
 	zend_object_std_init(&o->std, ce);
 
-	o->ce = (zend_class_entry*) 
-		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
-
 	o->std.handlers = &php_componere_patch_handlers;
 
 	return &o->std;
@@ -54,7 +51,9 @@ static inline void php_componere_patch_destroy(zend_object *zo) {
 	php_componere_definition_t *o = php_componere_definition_from(zo);
 
 	if (!Z_ISUNDEF(o->instance)) {
-		php_componere_destroy_class(o->ce);
+		if (o->ce) {
+			php_componere_destroy_class(o->ce);		
+		}
 
 		Z_OBJCE(o->instance) = o->saved;
 
@@ -95,10 +94,31 @@ PHP_METHOD(Patch, __construct)
 
 	pce = Z_OBJCE_P(pd);
 
+	o->ce = (zend_class_entry*) 
+		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
+
 	o->ce->type = ZEND_USER_CLASS;
 	o->ce->name = zend_string_copy(pce->name);
 
 	zend_initialize_class_data(o->ce, 1);
+
+	if (pce && pce->type == ZEND_USER_CLASS) {
+		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
+
+		if (pce->info.user.doc_comment) {
+			o->ce->info.user.doc_comment = zend_string_copy(pce->info.user.doc_comment);
+		}
+	} else {
+		o->ce->info.user.filename = zend_get_executed_filename_ex();
+		
+		if (o->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
+		} else {
+			o->ce->info.user.filename = zend_string_init(ZEND_STRL("unknown file"), 0);
+		}
+		
+		o->ce->info.user.line_start = zend_get_executed_lineno();
+	}
 
 	if (pce->type == ZEND_USER_CLASS) {
 		php_componere_definition_copy(o->ce, pce);
@@ -258,10 +278,31 @@ PHP_METHOD(Patch, derive)
 
 	r = php_componere_definition_fetch(return_value);
 
+	r->ce = (zend_class_entry*) 
+			zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
+
 	r->ce->type = ZEND_USER_CLASS;
 	r->ce->name = zend_string_copy(o->ce->name);
 	
 	zend_initialize_class_data(r->ce, 1);
+
+	if (o->ce && o->ce->type == ZEND_USER_CLASS) {
+		memcpy(&r->ce->info.user, &o->ce->info.user, sizeof(o->ce->info.user));
+
+		if (o->ce->info.user.doc_comment) {
+			r->ce->info.user.doc_comment = zend_string_copy(o->ce->info.user.doc_comment);
+		}
+	} else {
+		r->ce->info.user.filename = zend_get_executed_filename_ex();
+		
+		if (r->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
+		} else {
+			r->ce->info.user.filename = zend_string_init(ZEND_STRL("unknown file"), 0);
+		}
+		
+		r->ce->info.user.line_start = zend_get_executed_lineno();
+	}
 
 	php_componere_definition_copy(r->ce, o->ce);
 	php_componere_definition_parent(r->ce, o->ce);
@@ -285,7 +326,7 @@ PHP_METHOD(Patch, derive)
 }
 
 static zend_function_entry php_componere_patch_methods[] = {
-	PHP_ME(Patch, __construct, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(Patch, __construct, php_componere_ignore_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, getClosure, php_componere_patch_closure, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, getClosures, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
 	PHP_ME(Patch, apply, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
