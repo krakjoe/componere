@@ -103,6 +103,7 @@ PHP_METHOD(Method, __construct)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 	zval *closure = NULL;
+	uint32_t flags = 0;
 
 	if (php_componere_parse_parameters("O", &closure, zend_ce_closure) != SUCCESS) {
 		php_componere_wrong_parameters("closure expected");
@@ -119,10 +120,17 @@ PHP_METHOD(Method, __construct)
 	o->function->op_array.refcount = NULL;
 	o->function->op_array.scope = NULL;
 	o->function->op_array.prototype = NULL;
-	o->function->op_array.fn_flags = 
+
+	flags = 
 		(o->function->op_array.fn_flags & ZEND_ACC_STATIC) ?
 			(ZEND_ACC_STATIC|ZEND_ACC_PUBLIC) :
 			(ZEND_ACC_PUBLIC);
+	if (o->function->op_array.fn_flags & ZEND_ACC_VARIADIC) {
+		flags |= ZEND_ACC_VARIADIC;
+	}
+
+	o->function->op_array.fn_flags = flags;
+	
 
 	function_add_ref(o->function);
 }

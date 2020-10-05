@@ -501,9 +501,13 @@ PHP_METHOD(Definition, __construct)
 
 	if (pce && pce->type == ZEND_USER_CLASS) {
 		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
-
+		
 		if (pce->info.user.doc_comment) {
 			o->ce->info.user.doc_comment = zend_string_copy(pce->info.user.doc_comment);
+		}
+
+		if (o->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
 		}
 	} else {
 		o->ce->info.user.filename = zend_get_executed_filename_ex();

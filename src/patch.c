@@ -108,6 +108,10 @@ PHP_METHOD(Patch, __construct)
 		if (pce->info.user.doc_comment) {
 			o->ce->info.user.doc_comment = zend_string_copy(pce->info.user.doc_comment);
 		}
+
+		if (o->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
+		}
 	} else {
 		o->ce->info.user.filename = zend_get_executed_filename_ex();
 		
@@ -291,6 +295,10 @@ PHP_METHOD(Patch, derive)
 
 		if (o->ce->info.user.doc_comment) {
 			r->ce->info.user.doc_comment = zend_string_copy(o->ce->info.user.doc_comment);
+		}
+
+		if (r->ce->info.user.filename) {
+			zend_string_addref(r->ce->info.user.filename);
 		}
 	} else {
 		r->ce->info.user.filename = zend_get_executed_filename_ex();
