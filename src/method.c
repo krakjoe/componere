@@ -83,9 +83,6 @@ static inline void php_componere_method_destroy(zend_object *zo) {
 
 	if (o->function) {
 		destroy_zend_function(o->function);
-
-		if (o->function->common.function_name)
-			zend_string_release(o->function->common.function_name);
 	}
 
 	if (!Z_ISUNDEF(o->reflector)) {
@@ -131,7 +128,6 @@ PHP_METHOD(Method, __construct)
 
 	o->function->op_array.fn_flags = flags;
 	
-
 	function_add_ref(o->function);
 }
 

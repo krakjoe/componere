@@ -59,11 +59,6 @@ static inline zend_object* php_componere_definition_create(zend_class_entry *ce)
 
 	zend_object_std_init(&o->std, ce);
 
-	o->ce = (zend_class_entry*) 
-		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
-
-	memset(o->ce, 0, sizeof(zend_class_entry));
-
 	o->std.handlers = &php_componere_definition_handlers;
 
 	return &o->std;
@@ -444,7 +439,7 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 		zend_hash_update_ptr(CG(class_table), name, o->saved);
 
 		zend_string_release(name);
-	} else if (!o->registered) {
+	} else if (!o->registered && o->ce) {
 		php_componere_destroy_class(o->ce);
 	}
 
@@ -492,12 +487,38 @@ PHP_METHOD(Definition, __construct)
 		return;
 	}
 
+	pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name);
+
+	if (pce) {
+		if (zend_string_equals_ci(name, pce->name)) {
+			if (pce->type != ZEND_USER_CLASS) {
+				php_componere_throw_ex(InvalidArgumentException,
+					"cannot redeclare internal class %s", ZSTR_VAL(pce->name));
+				return;
+			}
+
+			if (pce->ce_flags & ZEND_ACC_INTERFACE) {
+				php_componere_throw_ex(InvalidArgumentException,
+					"cannot redeclare interface %s", ZSTR_VAL(pce->name));
+				return;
+			}
+
+			if (pce->ce_flags & ZEND_ACC_TRAIT) {
+				php_componere_throw_ex(InvalidArgumentException,
+					"cannot redeclare trait %s", ZSTR_VAL(pce->name));
+				return;
+			}
+		}
+	}
+
+	o->ce = (zend_class_entry*) 
+		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
+	memset(o->ce, 0, sizeof(zend_class_entry));
+
 	o->ce->type = ZEND_USER_CLASS;
 	o->ce->name = zend_string_copy(name);
 
 	zend_initialize_class_data(o->ce, 1);
-
-	pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name);
 
 	if (pce && pce->type == ZEND_USER_CLASS) {
 		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
@@ -702,7 +723,7 @@ ZEND_END_ARG_INFO()
 PHP_METHOD(Definition, addMethod)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
-	zend_string *name = NULL;
+	zend_string *name = NULL, *key;
 	zval *method = NULL;
 	zend_function *function;
 
@@ -770,13 +791,13 @@ PHP_METHOD(Definition, addMethod)
 	function->common.scope = o->ce;
 	function->common.function_name = zend_string_copy(name);
 
-	name = zend_string_tolower(name);
+	key = zend_string_tolower(name);
 
-	zend_hash_update_ptr(&o->ce->function_table, name, function);
+	zend_hash_update_ptr(&o->ce->function_table, key, function);
 	
 	function_add_ref(function);
 
-	zend_string_release(name);
+	zend_string_release(key);
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
