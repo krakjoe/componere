@@ -30,7 +30,9 @@ zend_class_entry* php_componere_reflection_class_ce;
 zend_class_entry* php_componere_reflection_method_ce;
 
 typedef struct {
+#if PHP_VERSION_ID < 80000
 	zval dummy;
+#endif
 	zval obj;
 	void *ptr;
 	zend_class_entry *ce;
