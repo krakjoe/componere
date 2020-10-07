@@ -1,9 +1,9 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 8b591539e52e4484b6b37c90d804e8c9f00534e2 */
+ * Stub hash: 8d40613399ac3dc3a114a854968f46765633bb24 */
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_Componere_cast, 0, 2, IS_MIXED, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Componere_cast, 0, 0, 2)
 	ZEND_ARG_TYPE_INFO(0, Type, IS_STRING, 0)
-	ZEND_ARG_TYPE_INFO(0, object, IS_MIXED, 0)
+	ZEND_ARG_INFO(0, object)
 ZEND_END_ARG_INFO()
 
 #define arginfo_Componere_cast_by_ref arginfo_Componere_cast
