@@ -972,9 +972,16 @@ PHP_METHOD(Definition, addProperty)
 		php_componere_value_addref(value);
 
 #if PHP_VERSION_ID >= 70400
-		o->ce->properties_info_table = NULL;
+		{
+			zend_string *parent_name = o->ce->parent_name;
 
-        	zend_do_link_class(o->ce, NULL);
+			o->ce->parent_name = NULL;
+			o->ce->properties_info_table = NULL;
+
+        		zend_do_link_class(o->ce, NULL);
+
+			o->ce->parent_name = parent_name;
+		}
 #endif
 
 #if PHP_VERSION_ID < 80000
