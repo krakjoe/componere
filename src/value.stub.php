@@ -16,9 +16,9 @@ class Value {
 
 	public function setStatic():Value {}
 
-	public function isPrivate():bool {}
-
 	public function isProtected():bool {}
+
+	public function isPrivate():bool {}
 
 	public function isStatic():bool {}
 

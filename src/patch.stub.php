@@ -14,6 +14,10 @@ abstract class Patch extends Abstract\Definition {
 	 */
 	public function __construct(...$arguments) {}
 
+	public function getClosure(string $name):\Closure {}
+
+	public function getClosures():array {}
+
 	/**
 	 * @return void
 	 */
@@ -23,10 +27,6 @@ abstract class Patch extends Abstract\Definition {
 	 * @return void
 	 */
 	public function revert() {}
-
-	public function getClosure(string $name):\Closure {}
-
-	public function getClosures():array {}
 
 	public function isApplied():bool {}
 
