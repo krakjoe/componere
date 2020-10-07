@@ -834,6 +834,7 @@ PHP_METHOD(Definition, addTrait)
 #if PHP_VERSION_ID >= 70400
     {
         uint32_t num_traits          = o->ce->num_traits;
+	zend_string *parent_name     = o->ce->parent_name;
 
         o->ce->trait_names = erealloc(o->ce->trait_names, sizeof(zend_class_name) * (num_traits + 1));
         o->ce->num_traits = 1;
@@ -842,6 +843,7 @@ PHP_METHOD(Definition, addTrait)
         o->ce->trait_names[num_traits].lc_name = zend_string_tolower(trait->name);
 
         o->ce->trait_names += num_traits;
+	o->ce->parent_name = NULL;
 
 #if PHP_VERSION_ID >= 80000
 
@@ -853,6 +855,7 @@ PHP_METHOD(Definition, addTrait)
 
         o->ce->num_traits  = num_traits + 1;
         o->ce->trait_names -= num_traits;
+	o->ce->parent_name = parent_name;
     }
 #else
 	zend_do_implement_trait(o->ce, trait);
