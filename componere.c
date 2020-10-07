@@ -43,6 +43,9 @@ static inline void php_componere_optimizer_adjust()
 	/* disable constant substitution block pass */
 	optimizer &= ~1;
 
+	/* disable constant propagation */
+        optimizer &= ~(1<<7);
+
 	/* disable merging constants */
 	optimizer &= ~(1<<10);
 
