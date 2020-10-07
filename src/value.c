@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018-2019                                  |
+  | Copyright (c) Joe Watkins 2018-2020                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -30,6 +30,12 @@
 #include <src/common.h>
 #include <src/value.h>
 
+#if PHP_VERSION_ID < 80000
+#include "value_legacy_arginfo.h"
+#else
+#include "value_arginfo.h"
+#endif
+
 zend_class_entry *php_componere_value_ce;
 zend_object_handlers php_componere_value_handlers;
 
@@ -54,10 +60,6 @@ static inline void php_componere_value_destroy(zend_object *zo) {
 
 	zend_object_std_dtor(&o->std);
 }
-
-ZEND_BEGIN_ARG_INFO_EX(php_componere_value_construct, 0, 0, 0)
-	ZEND_ARG_INFO(0, value)
-ZEND_END_ARG_INFO()
 
 PHP_METHOD(Value, __construct)
 {
@@ -178,24 +180,10 @@ PHP_METHOD(Value, hasDefault)
 	RETURN_BOOL(!Z_ISUNDEF(o->value));
 }
 
-static zend_function_entry php_componere_value_methods[] = {
-	PHP_ME(Value, __construct, php_componere_value_construct, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-
-	PHP_ME(Value, isProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, isPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Value, isStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-
-	PHP_ME(Value, hasDefault, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
-
 PHP_MINIT_FUNCTION(Componere_Value) {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere", "Value", php_componere_value_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere", "Value", class_Value_methods);
 
 	php_componere_value_ce = zend_register_internal_class(&ce);
 	php_componere_value_ce->create_object = php_componere_value_create;
