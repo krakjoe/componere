@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018-2019                                  |
+  | Copyright (c) Joe Watkins 2018-2020                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -34,6 +34,13 @@
 #include <src/definition.h>
 #include <src/method.h>
 #include <src/value.h>
+
+#if PHP_VERSION_ID < 80000
+#include "definition_legacy_arginfo.h"
+#else
+#include "definition_arginfo.h"
+#endif
+
 
 zend_class_entry *php_componere_definition_abstract_ce;
 zend_class_entry *php_componere_definition_ce;
@@ -450,7 +457,7 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 	zend_object_std_dtor(&o->std);
 }
 
-PHP_METHOD(Definition, __construct)
+PHP_METHOD(Componere_Definition, __construct)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -650,7 +657,7 @@ void php_componere_definition_properties_table_rebuild(zend_class_entry *ce)
 }
 #endif
 
-PHP_METHOD(Definition, register)
+PHP_METHOD(Componere_Definition, register)
 {
 	php_componere_definition_t *o = 
 		php_componere_definition_fetch(getThis());
@@ -715,12 +722,7 @@ PHP_METHOD(Definition, register)
 #endif
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_method, 0, 0, 2)
-	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_INFO(0, method)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, addMethod)
+PHP_METHOD(Componere_Abstract_Definition, addMethod)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL, *key;
@@ -802,11 +804,7 @@ PHP_METHOD(Definition, addMethod)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_trait, 0, 0, 1)
-	ZEND_ARG_INFO(0, trait)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, addTrait)
+PHP_METHOD(Componere_Abstract_Definition, addTrait)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_class_entry *trait = NULL;
@@ -865,11 +863,7 @@ PHP_METHOD(Definition, addTrait)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_interface, 0, 0, 1)
-	ZEND_ARG_INFO(0, interface)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, addInterface)
+PHP_METHOD(Componere_Abstract_Definition, addInterface)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_class_entry *interface = NULL;
@@ -897,11 +891,6 @@ PHP_METHOD(Definition, addInterface)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_property, 0, 0, 2)
-	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_INFO(0, value)
-ZEND_END_ARG_INFO()
-
 static zend_always_inline zend_bool php_componere_property_check(zend_objects_store *objects, php_componere_definition_t *def) {
 	
 	if (objects->top > 1) {
@@ -925,7 +914,7 @@ static zend_always_inline zend_bool php_componere_property_check(zend_objects_st
 	return 1;
 }
 
-PHP_METHOD(Definition, addProperty)
+PHP_METHOD(Componere_Definition, addProperty)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -991,12 +980,7 @@ PHP_METHOD(Definition, addProperty)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_constant, 0, 0, 2)
-	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_INFO(0, property)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, addConstant)
+PHP_METHOD(Componere_Definition, addConstant)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -1043,7 +1027,7 @@ PHP_METHOD(Definition, addConstant)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Definition, setConstant)
+PHP_METHOD(Componere_Definition, setConstant)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -1094,11 +1078,7 @@ PHP_METHOD(Definition, setConstant)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_closure, 0, 0, 1)
-	ZEND_ARG_INFO(0, name)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, getClosure)
+PHP_METHOD(Componere_Definition, getClosure)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -1125,7 +1105,7 @@ PHP_METHOD(Definition, getClosure)
 	zend_string_release(key);
 }
 
-PHP_METHOD(Definition, getClosures)
+PHP_METHOD(Componere_Definition, getClosures)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_function *function = NULL;
@@ -1149,7 +1129,7 @@ PHP_METHOD(Definition, getClosures)
 	} ZEND_HASH_FOREACH_END();
 }
 
-PHP_METHOD(Definition, isRegistered)
+PHP_METHOD(Componere_Definition, isRegistered)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 
@@ -1158,7 +1138,7 @@ PHP_METHOD(Definition, isRegistered)
 	RETURN_BOOL(o->registered);
 }
 
-PHP_METHOD(Definition, getReflector)
+PHP_METHOD(Componere_Abstract_Definition, getReflector)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 
@@ -1178,35 +1158,16 @@ PHP_METHOD(Definition, getReflector)
 	RETURN_ZVAL(&o->reflector, 1, 0);
 }
 
-static zend_function_entry php_componere_definition_abstract_methods[] = {
-	PHP_ME(Definition, addMethod, php_componere_definition_method, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addTrait, php_componere_definition_trait, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addInterface, php_componere_definition_interface, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, getReflector, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
-
-static zend_function_entry php_componere_definition_methods[] = {
-	PHP_ME(Definition, __construct, php_componere_ignore_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addProperty, php_componere_definition_property, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, setConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, getClosure, php_componere_definition_closure, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, getClosures, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, register, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, isRegistered, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
 
 PHP_MINIT_FUNCTION(Componere_Definition) {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere\\Abstract", "Definition", php_componere_definition_abstract_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere\\Abstract", "Definition", class_Componere_Abstract_Definition_methods);
 
 	php_componere_definition_abstract_ce = zend_register_internal_class(&ce);
 	php_componere_definition_abstract_ce->ce_flags |= ZEND_ACC_EXPLICIT_ABSTRACT_CLASS;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere", "Definition", php_componere_definition_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere", "Definition", class_Componere_Definition_methods);
 
 	php_componere_definition_ce = zend_register_internal_class_ex(&ce, php_componere_definition_abstract_ce);
 	php_componere_definition_ce->create_object = php_componere_definition_create;
