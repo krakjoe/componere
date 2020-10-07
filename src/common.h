@@ -169,10 +169,4 @@ static inline void php_componere_setup_handlers(
 	handlers->offset = offset;
 }
 
-ZEND_BEGIN_ARG_INFO(php_componere_no_arginfo, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(php_componere_ignore_arginfo, 1)
-	ZEND_ARG_VARIADIC_INFO(0, arguments)
-ZEND_END_ARG_INFO()
 #endif
