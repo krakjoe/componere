@@ -5,15 +5,16 @@
  * @generate-legacy-arginfo
  */
 
+namespace Componere;
 
 class Value {
 	public function __construct(mixed $value = NULL) {}
 
-	public function setProtected():Componere\Value {}
+	public function setProtected():Value {}
 
-	public function setPrivate():Componere\Value {}
+	public function setPrivate():Value {}
 
-	public function setStatic():Componere\Value {}
+	public function setStatic():Value {}
 
 	public function isPrivate():bool {}
 
