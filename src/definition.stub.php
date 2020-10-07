@@ -25,7 +25,7 @@ abstract class Definition extends Abstract\Definition {
 	/**
 	 * @param mixed $arguments
 	 */
-	public function __construct(...$arguments) {}
+	public function __construct(string $name, ...$arguments) {}
 
 	public function addProperty(string $name, Value $value):static {}
 

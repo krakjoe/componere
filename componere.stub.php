@@ -7,15 +7,7 @@
 
 namespace Componere;
 
-/**
- * @param mixed $object
- * @return mixed
- */
-function cast(string $Type, $object) {}
+function cast(string $Type, object $object):object {}
 
-/**
- * @param mixed $object
- * @return mixed
- */
-function cast_by_ref(string $Type, $object) {}
+function cast_by_ref(string $Type, object $object):object {}
 

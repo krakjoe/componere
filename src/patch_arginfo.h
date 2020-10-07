@@ -1,7 +1,8 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 6ef7ca54e765828148371ba59be8ada41da72ac4 */
+ * Stub hash: 7bba7522aa6f3666cde11ddeb0dbcb4401871a0a */
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Componere_Patch___construct, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Componere_Patch___construct, 0, 0, 1)
+	ZEND_ARG_TYPE_INFO(0, instance, IS_OBJECT, 0)
 	ZEND_ARG_VARIADIC_INFO(0, arguments)
 ZEND_END_ARG_INFO()
 
@@ -21,7 +22,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Componere_Patch_isApplied,
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Componere_Patch_derive, 0, 0, 1)
-	ZEND_ARG_INFO(0, object)
+	ZEND_ARG_TYPE_INFO(0, object, IS_OBJECT, 0)
 ZEND_END_ARG_INFO()
 
 

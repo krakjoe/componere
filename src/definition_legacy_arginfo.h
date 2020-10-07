@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 5949e70343f7a1555409ac8211f4440948e52b3d */
+ * Stub hash: e02c82be4ca16c95473c30bff2d03369791007ae */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Componere_Abstract_Definition_addMethod, 0, 0, 2)
 	ZEND_ARG_INFO(0, name)
@@ -17,7 +17,8 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Componere_Abstract_Definition_getReflector, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Componere_Definition___construct, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Componere_Definition___construct, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
 	ZEND_ARG_VARIADIC_INFO(0, arguments)
 ZEND_END_ARG_INFO()
 

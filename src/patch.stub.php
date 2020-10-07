@@ -12,7 +12,7 @@ abstract class Patch extends Abstract\Definition {
 	/**
 	 * @param mixed $arguments
 	 */
-	public function __construct(...$arguments) {}
+	public function __construct(object $instance, ...$arguments) {}
 
 	public function getClosure(string $name):\Closure {}
 
@@ -31,9 +31,8 @@ abstract class Patch extends Abstract\Definition {
 	public function isApplied():bool {}
 
 	/**
-	 * @param mixed $object
 	 * @return void
 	 */
-	public function derive($object) {}
+	public function derive(object $object) {}
 }
 
