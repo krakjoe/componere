@@ -67,7 +67,7 @@ PHP_METHOD(Componere_Value, __construct)
 	zval *value = NULL;
 
 	if (php_componere_parse_parameters("|z", &value) != SUCCESS) {
-		php_componere_wrong_parameters("value expected");
+		php_componere_wrong_parameters("only optional value expected");
 		return;
 	}
 
