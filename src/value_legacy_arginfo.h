@@ -1,7 +1,7 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 8f33e9df6fc9c5c297d95efff91bdbe6e0c16f07 */
+ * Stub hash: 6612c7a30bcfe6b00fe0bc93c1313778a916e9f4 */
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Value___construct, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Value___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, value)
 ZEND_END_ARG_INFO()
 

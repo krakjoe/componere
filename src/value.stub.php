@@ -7,7 +7,7 @@
 
 
 class Value {
-	public function __construct(mixed $value) {}
+	public function __construct(mixed $value = NULL) {}
 
 	public function setProtected():Componere\Value {}
 
