@@ -98,7 +98,7 @@ static inline void php_componere_method_destroy(zend_object *zo) {
 	zend_object_std_dtor(&o->std);
 }
 
-PHP_METHOD(Method, __construct)
+PHP_METHOD(Componere_Method, __construct)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 	zval *closure = NULL;
@@ -133,7 +133,7 @@ PHP_METHOD(Method, __construct)
 	function_add_ref(o->function);
 }
 
-PHP_METHOD(Method, setProtected)
+PHP_METHOD(Componere_Method, setProtected)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -149,7 +149,7 @@ PHP_METHOD(Method, setProtected)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Method, setPrivate)
+PHP_METHOD(Componere_Method, setPrivate)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -165,7 +165,7 @@ PHP_METHOD(Method, setPrivate)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Method, setStatic)
+PHP_METHOD(Componere_Method, setStatic)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -176,7 +176,7 @@ PHP_METHOD(Method, setStatic)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Method, setFinal)
+PHP_METHOD(Componere_Method, setFinal)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -187,7 +187,7 @@ PHP_METHOD(Method, setFinal)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Method, getReflector)
+PHP_METHOD(Componere_Method, getReflector)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -210,7 +210,7 @@ PHP_METHOD(Method, getReflector)
 PHP_MINIT_FUNCTION(Componere_Method) {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere", "Method", class_Method_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere", "Method", class_Componere_Method_methods);
 
 	php_componere_method_ce = zend_register_internal_class(&ce);
 	php_componere_method_ce->create_object = php_componere_method_create;

@@ -61,7 +61,7 @@ static inline void php_componere_value_destroy(zend_object *zo) {
 	zend_object_std_dtor(&o->std);
 }
 
-PHP_METHOD(Value, __construct)
+PHP_METHOD(Componere_Value, __construct)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 	zval *value = NULL;
@@ -101,7 +101,7 @@ PHP_METHOD(Value, __construct)
 	}
 }
 
-PHP_METHOD(Value, setProtected)
+PHP_METHOD(Componere_Value, setProtected)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
@@ -117,7 +117,7 @@ PHP_METHOD(Value, setProtected)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Value, setPrivate)
+PHP_METHOD(Componere_Value, setPrivate)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
@@ -133,7 +133,7 @@ PHP_METHOD(Value, setPrivate)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Value, setStatic)
+PHP_METHOD(Componere_Value, setStatic)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
@@ -144,7 +144,7 @@ PHP_METHOD(Value, setStatic)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Value, isPrivate)
+PHP_METHOD(Componere_Value, isPrivate)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
@@ -153,7 +153,7 @@ PHP_METHOD(Value, isPrivate)
 	RETURN_BOOL((o->access & ZEND_ACC_PRIVATE) == ZEND_ACC_PRIVATE);
 }
 
-PHP_METHOD(Value, isProtected)
+PHP_METHOD(Componere_Value, isProtected)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
@@ -162,7 +162,7 @@ PHP_METHOD(Value, isProtected)
 	RETURN_BOOL((o->access & ZEND_ACC_PROTECTED) == ZEND_ACC_PROTECTED);
 }
 
-PHP_METHOD(Value, isStatic)
+PHP_METHOD(Componere_Value, isStatic)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
@@ -171,7 +171,7 @@ PHP_METHOD(Value, isStatic)
 	RETURN_BOOL((o->access & ZEND_ACC_STATIC) == ZEND_ACC_STATIC);
 }
 
-PHP_METHOD(Value, hasDefault)
+PHP_METHOD(Componere_Value, hasDefault)
 {
 	php_componere_value_t *o = php_componere_value_fetch(getThis());
 
@@ -183,7 +183,7 @@ PHP_METHOD(Value, hasDefault)
 PHP_MINIT_FUNCTION(Componere_Value) {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere", "Value", class_Value_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere", "Value", class_Componere_Value_methods);
 
 	php_componere_value_ce = zend_register_internal_class(&ce);
 	php_componere_value_ce->create_object = php_componere_value_create;
