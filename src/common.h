@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018-2019                                  |
+  | Copyright (c) Joe Watkins 2018-2020                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -169,6 +169,4 @@ static inline void php_componere_setup_handlers(
 	handlers->offset = offset;
 }
 
-ZEND_BEGIN_ARG_INFO(php_componere_no_arginfo, 0)
-ZEND_END_ARG_INFO()
 #endif

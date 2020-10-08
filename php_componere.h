@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018-2019                                  |
+  | Copyright (c) Joe Watkins 2018-2020                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -22,7 +22,7 @@
 extern zend_module_entry componere_module_entry;
 # define phpext_componere_ptr &componere_module_entry
 
-# define PHP_COMPONERE_VERSION "3.1.1"
+# define PHP_COMPONERE_VERSION "3.1.2"
 
 # if defined(ZTS) && defined(COMPILE_DL_COMPONERE)
 ZEND_TSRMLS_CACHE_EXTERN()

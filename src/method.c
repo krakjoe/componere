@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018-2019                                  |
+  | Copyright (c) Joe Watkins 2018-2020                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -30,6 +30,12 @@
 #include <src/common.h>
 #include <src/reflection.h>
 #include <src/method.h>
+
+#if PHP_VERSION_ID < 80000
+#include "method_legacy_arginfo.h"
+#else
+#include "method_arginfo.h"
+#endif
 
 zend_class_entry *php_componere_method_ce;
 zend_object_handlers php_componere_method_handlers;
@@ -83,9 +89,6 @@ static inline void php_componere_method_destroy(zend_object *zo) {
 
 	if (o->function) {
 		destroy_zend_function(o->function);
-
-		if (o->function->common.function_name)
-			zend_string_release(o->function->common.function_name);
 	}
 
 	if (!Z_ISUNDEF(o->reflector)) {
@@ -95,14 +98,11 @@ static inline void php_componere_method_destroy(zend_object *zo) {
 	zend_object_std_dtor(&o->std);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_method_construct, 0, 0, 1)
-	ZEND_ARG_INFO(0, closure)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Method, __construct)
+PHP_METHOD(Componere_Method, __construct)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 	zval *closure = NULL;
+	uint32_t flags = 0;
 
 	if (php_componere_parse_parameters("O", &closure, zend_ce_closure) != SUCCESS) {
 		php_componere_wrong_parameters("closure expected");
@@ -119,15 +119,21 @@ PHP_METHOD(Method, __construct)
 	o->function->op_array.refcount = NULL;
 	o->function->op_array.scope = NULL;
 	o->function->op_array.prototype = NULL;
-	o->function->op_array.fn_flags = 
+
+	flags = 
 		(o->function->op_array.fn_flags & ZEND_ACC_STATIC) ?
 			(ZEND_ACC_STATIC|ZEND_ACC_PUBLIC) :
 			(ZEND_ACC_PUBLIC);
+	if (o->function->op_array.fn_flags & ZEND_ACC_VARIADIC) {
+		flags |= ZEND_ACC_VARIADIC;
+	}
 
+	o->function->op_array.fn_flags = flags;
+	
 	function_add_ref(o->function);
 }
 
-PHP_METHOD(Method, setProtected)
+PHP_METHOD(Componere_Method, setProtected)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -143,7 +149,7 @@ PHP_METHOD(Method, setProtected)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Method, setPrivate)
+PHP_METHOD(Componere_Method, setPrivate)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -159,7 +165,7 @@ PHP_METHOD(Method, setPrivate)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Method, setStatic)
+PHP_METHOD(Componere_Method, setStatic)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -170,7 +176,7 @@ PHP_METHOD(Method, setStatic)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Method, setFinal)
+PHP_METHOD(Componere_Method, setFinal)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -181,7 +187,7 @@ PHP_METHOD(Method, setFinal)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Method, getReflector)
+PHP_METHOD(Componere_Method, getReflector)
 {
 	php_componere_method_t *o = php_componere_method_fetch(getThis());
 
@@ -201,21 +207,10 @@ PHP_METHOD(Method, getReflector)
 	RETURN_ZVAL(&o->reflector, 1 , 0);
 }
 
-static zend_function_entry php_componere_method_methods[] = {
-	PHP_ME(Method, __construct, php_componere_method_construct, ZEND_ACC_PUBLIC)
-	PHP_ME(Method, setProtected, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Method, setPrivate, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Method, setStatic, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Method, setFinal, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-
-	PHP_ME(Method, getReflector, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
-
 PHP_MINIT_FUNCTION(Componere_Method) {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere", "Method", php_componere_method_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere", "Method", class_Componere_Method_methods);
 
 	php_componere_method_ce = zend_register_internal_class(&ce);
 	php_componere_method_ce->create_object = php_componere_method_create;

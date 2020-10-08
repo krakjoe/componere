@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018-2019                                  |
+  | Copyright (c) Joe Watkins 2018-2020                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -30,7 +30,9 @@ zend_class_entry* php_componere_reflection_class_ce;
 zend_class_entry* php_componere_reflection_method_ce;
 
 typedef struct {
+#if PHP_VERSION_ID < 80000
 	zval dummy;
+#endif
 	zval obj;
 	void *ptr;
 	zend_class_entry *ce;

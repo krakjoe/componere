@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018-2019                                  |
+  | Copyright (c) Joe Watkins 2018-2020                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -32,6 +32,12 @@
 #include <src/common.h>
 #include <src/definition.h>
 
+#if PHP_VERSION_ID < 80000
+#include "patch_legacy_arginfo.h"
+#else
+#include "patch_arginfo.h"
+#endif
+
 zend_class_entry *php_componere_patch_ce;
 zend_object_handlers php_componere_patch_handlers;
 
@@ -42,9 +48,6 @@ static inline zend_object* php_componere_patch_create(zend_class_entry *ce) {
 
 	zend_object_std_init(&o->std, ce);
 
-	o->ce = (zend_class_entry*) 
-		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
-
 	o->std.handlers = &php_componere_patch_handlers;
 
 	return &o->std;
@@ -54,7 +57,9 @@ static inline void php_componere_patch_destroy(zend_object *zo) {
 	php_componere_definition_t *o = php_componere_definition_from(zo);
 
 	if (!Z_ISUNDEF(o->instance)) {
-		php_componere_destroy_class(o->ce);
+		if (o->ce) {
+			php_componere_destroy_class(o->ce);		
+		}
 
 		Z_OBJCE(o->instance) = o->saved;
 
@@ -70,7 +75,7 @@ static inline void php_componere_patch_destroy(zend_object *zo) {
 	zend_object_std_dtor(&o->std);
 }
 
-PHP_METHOD(Patch, __construct)
+PHP_METHOD(Componere_Patch, __construct)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_class_entry *pce = NULL;
@@ -95,10 +100,35 @@ PHP_METHOD(Patch, __construct)
 
 	pce = Z_OBJCE_P(pd);
 
+	o->ce = (zend_class_entry*) 
+		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
+
 	o->ce->type = ZEND_USER_CLASS;
 	o->ce->name = zend_string_copy(pce->name);
 
 	zend_initialize_class_data(o->ce, 1);
+
+	if (pce && pce->type == ZEND_USER_CLASS) {
+		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
+
+		if (pce->info.user.doc_comment) {
+			o->ce->info.user.doc_comment = zend_string_copy(pce->info.user.doc_comment);
+		}
+
+		if (o->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
+		}
+	} else {
+		o->ce->info.user.filename = zend_get_executed_filename_ex();
+		
+		if (o->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
+		} else {
+			o->ce->info.user.filename = zend_string_init(ZEND_STRL("unknown file"), 0);
+		}
+		
+		o->ce->info.user.line_start = zend_get_executed_lineno();
+	}
 
 	if (pce->type == ZEND_USER_CLASS) {
 		php_componere_definition_copy(o->ce, pce);
@@ -152,7 +182,7 @@ PHP_METHOD(Patch, __construct)
 #endif
 }
 
-PHP_METHOD(Patch, apply)
+PHP_METHOD(Componere_Patch, apply)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_object *zo;
@@ -163,7 +193,7 @@ PHP_METHOD(Patch, apply)
 	zo->ce = o->ce;
 }
 
-PHP_METHOD(Patch, revert)
+PHP_METHOD(Componere_Patch, revert)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_object *zo;
@@ -174,11 +204,7 @@ PHP_METHOD(Patch, revert)
 	zo->ce = o->saved;
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_patch_closure, 0, 0, 1)
-	ZEND_ARG_INFO(0, name)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Patch, getClosure)
+PHP_METHOD(Componere_Patch, getClosure)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -203,7 +229,7 @@ PHP_METHOD(Patch, getClosure)
 	zend_string_release(key);
 }
 
-PHP_METHOD(Patch, getClosures)
+PHP_METHOD(Componere_Patch, getClosures)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_function *function = NULL;
@@ -222,7 +248,7 @@ PHP_METHOD(Patch, getClosures)
 	} ZEND_HASH_FOREACH_END();
 }
 
-PHP_METHOD(Patch, isApplied)
+PHP_METHOD(Componere_Patch, isApplied)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 
@@ -231,11 +257,7 @@ PHP_METHOD(Patch, isApplied)
 	RETURN_BOOL(Z_OBJCE(o->instance) == o->ce);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_patch_derive, 0, 0, 1)
-	ZEND_ARG_INFO(0, object)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Patch, derive)
+PHP_METHOD(Componere_Patch, derive)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	php_componere_definition_t *r;
@@ -258,10 +280,35 @@ PHP_METHOD(Patch, derive)
 
 	r = php_componere_definition_fetch(return_value);
 
+	r->ce = (zend_class_entry*) 
+			zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
+
 	r->ce->type = ZEND_USER_CLASS;
 	r->ce->name = zend_string_copy(o->ce->name);
 	
 	zend_initialize_class_data(r->ce, 1);
+
+	if (o->ce && o->ce->type == ZEND_USER_CLASS) {
+		memcpy(&r->ce->info.user, &o->ce->info.user, sizeof(o->ce->info.user));
+
+		if (o->ce->info.user.doc_comment) {
+			r->ce->info.user.doc_comment = zend_string_copy(o->ce->info.user.doc_comment);
+		}
+
+		if (r->ce->info.user.filename) {
+			zend_string_addref(r->ce->info.user.filename);
+		}
+	} else {
+		r->ce->info.user.filename = zend_get_executed_filename_ex();
+		
+		if (r->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
+		} else {
+			r->ce->info.user.filename = zend_string_init(ZEND_STRL("unknown file"), 0);
+		}
+		
+		r->ce->info.user.line_start = zend_get_executed_lineno();
+	}
 
 	php_componere_definition_copy(r->ce, o->ce);
 	php_componere_definition_parent(r->ce, o->ce);
@@ -284,21 +331,10 @@ PHP_METHOD(Patch, derive)
 #endif
 }
 
-static zend_function_entry php_componere_patch_methods[] = {
-	PHP_ME(Patch, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, getClosure, php_componere_patch_closure, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, getClosures, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, apply, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, revert, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, isApplied, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Patch, derive, php_componere_patch_derive, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
-
 PHP_MINIT_FUNCTION(Componere_Patch) {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere", "Patch", php_componere_patch_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere", "Patch", class_Componere_Patch_methods);
 	
 	php_componere_patch_ce = zend_register_internal_class_ex(&ce, php_componere_definition_abstract_ce);
 	php_componere_patch_ce->create_object = php_componere_patch_create;

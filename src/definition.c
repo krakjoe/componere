@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018-2019                                  |
+  | Copyright (c) Joe Watkins 2018-2020                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -35,6 +35,13 @@
 #include <src/method.h>
 #include <src/value.h>
 
+#if PHP_VERSION_ID < 80000
+#include "definition_legacy_arginfo.h"
+#else
+#include "definition_arginfo.h"
+#endif
+
+
 zend_class_entry *php_componere_definition_abstract_ce;
 zend_class_entry *php_componere_definition_ce;
 
@@ -58,11 +65,6 @@ static inline zend_object* php_componere_definition_create(zend_class_entry *ce)
 			ecalloc(1, sizeof(php_componere_definition_t));
 
 	zend_object_std_init(&o->std, ce);
-
-	o->ce = (zend_class_entry*) 
-		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
-
-	memset(o->ce, 0, sizeof(zend_class_entry));
 
 	o->std.handlers = &php_componere_definition_handlers;
 
@@ -147,11 +149,17 @@ static inline void php_componere_definition_magic(zend_class_entry *ce, zend_cla
 	if (parent->__debugInfo)
 		ce->__debugInfo = php_componere_definition_magic_find(ce, "__debuginfo");
 
+#if PHP_VERSION_ID >= 80000
+	ce->__serialize = php_componere_definition_magic_find(ce, "serialize");
+	ce->__unserialize = php_componere_definition_magic_find(ce, "unserialize");
+#else
 	ce->serialize_func = php_componere_definition_magic_find(ce, "serialize");
 	ce->unserialize_func = php_componere_definition_magic_find(ce, "unserialize");
+#endif
 
 	ce->serialize = parent->serialize;
 	ce->unserialize = parent->unserialize;
+
 #undef php_componere_definition_magic_find
 }
 
@@ -438,7 +446,7 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 		zend_hash_update_ptr(CG(class_table), name, o->saved);
 
 		zend_string_release(name);
-	} else if (!o->registered) {
+	} else if (!o->registered && o->ce) {
 		php_componere_destroy_class(o->ce);
 	}
 
@@ -449,7 +457,7 @@ static inline void php_componere_definition_destroy(zend_object *zo) {
 	zend_object_std_dtor(&o->std);
 }
 
-PHP_METHOD(Definition, __construct)
+PHP_METHOD(Componere_Definition, __construct)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -486,12 +494,61 @@ PHP_METHOD(Definition, __construct)
 		return;
 	}
 
+	pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name);
+
+	if (pce) {
+		if (zend_string_equals_ci(name, pce->name)) {
+			if (pce->type != ZEND_USER_CLASS) {
+				php_componere_throw_ex(InvalidArgumentException,
+					"cannot redeclare internal class %s", ZSTR_VAL(pce->name));
+				return;
+			}
+
+			if (pce->ce_flags & ZEND_ACC_INTERFACE) {
+				php_componere_throw_ex(InvalidArgumentException,
+					"cannot redeclare interface %s", ZSTR_VAL(pce->name));
+				return;
+			}
+
+			if (pce->ce_flags & ZEND_ACC_TRAIT) {
+				php_componere_throw_ex(InvalidArgumentException,
+					"cannot redeclare trait %s", ZSTR_VAL(pce->name));
+				return;
+			}
+		}
+	}
+
+	o->ce = (zend_class_entry*) 
+		zend_arena_alloc(&CG(arena), sizeof(zend_class_entry));
+	memset(o->ce, 0, sizeof(zend_class_entry));
+
 	o->ce->type = ZEND_USER_CLASS;
 	o->ce->name = zend_string_copy(name);
 
 	zend_initialize_class_data(o->ce, 1);
 
-	pce = parent ? zend_lookup_class(parent) : zend_lookup_class(name);
+	if (pce && pce->type == ZEND_USER_CLASS) {
+		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
+		
+		if (pce->info.user.doc_comment) {
+			o->ce->info.user.doc_comment = zend_string_copy(pce->info.user.doc_comment);
+		}
+
+		if (o->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
+		}
+	} else {
+		o->ce->info.user.filename = zend_get_executed_filename_ex();
+		
+		if (o->ce->info.user.filename) {
+			zend_string_addref(o->ce->info.user.filename);
+		} else {
+			o->ce->info.user.filename = zend_string_init(ZEND_STRL("unknown file"), 0);
+		}
+		
+		o->ce->info.user.line_start = zend_get_executed_lineno();
+	}
+
 	if (pce) {
 		if (zend_string_equals_ci(o->ce->name, pce->name)) {
 			if (pce->type != ZEND_USER_CLASS) {
@@ -524,14 +581,6 @@ PHP_METHOD(Definition, __construct)
     o->ce->ce_flags |= ZEND_ACC_LINKED;
 #endif
 
-	if (pce && pce->type == ZEND_USER_CLASS) {
-		memcpy(&o->ce->info.user, &pce->info.user, sizeof(pce->info.user));
-
-		if (pce->info.user.doc_comment) {
-			o->ce->info.user.doc_comment = zend_string_copy(pce->info.user.doc_comment);
-		}
-	}
-
 	if (interfaces) {
 		zval *interface = NULL;
 
@@ -562,9 +611,6 @@ PHP_METHOD(Definition, __construct)
 		o->ce->ce_flags &= ~ZEND_ACC_IMPLICIT_ABSTRACT_CLASS;
 	}
 
-	if (!o->ce->info.user.filename) {
-		o->ce->info.user.filename = name;
-	}
 
 #if PHP_VERSION_ID >= 70400
     o->ce->ce_flags |= ZEND_ACC_RESOLVED_INTERFACES;
@@ -611,7 +657,7 @@ void php_componere_definition_properties_table_rebuild(zend_class_entry *ce)
 }
 #endif
 
-PHP_METHOD(Definition, register)
+PHP_METHOD(Componere_Definition, register)
 {
 	php_componere_definition_t *o = 
 		php_componere_definition_fetch(getThis());
@@ -676,15 +722,10 @@ PHP_METHOD(Definition, register)
 #endif
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_method, 0, 0, 2)
-	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_INFO(0, method)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, addMethod)
+PHP_METHOD(Componere_Abstract_Definition, addMethod)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
-	zend_string *name = NULL;
+	zend_string *name = NULL, *key;
 	zval *method = NULL;
 	zend_function *function;
 
@@ -736,30 +777,34 @@ PHP_METHOD(Definition, addMethod)
 	} else if (zend_string_equals_literal_ci(name, "__debuginfo")) {
 		o->ce->__debugInfo = function;
 	} else if (zend_string_equals_literal_ci(name, "serialize")) {
+#if PHP_VERSION_ID >= 80000
+		o->ce->__serialize = function;
+#else
 		o->ce->serialize_func = function;
+#endif
 	} else if (zend_string_equals_literal_ci(name, "unserialize")) {
+#if PHP_VERSION_ID >= 80000
+		o->ce->__unserialize = function;
+#else
 		o->ce->unserialize_func = function;
+#endif
 	}
 
 	function->common.scope = o->ce;
 	function->common.function_name = zend_string_copy(name);
 
-	name = zend_string_tolower(name);
+	key = zend_string_tolower(name);
 
-	zend_hash_update_ptr(&o->ce->function_table, name, function);
+	zend_hash_update_ptr(&o->ce->function_table, key, function);
 	
 	function_add_ref(function);
 
-	zend_string_release(name);
+	zend_string_release(key);
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_trait, 0, 0, 1)
-	ZEND_ARG_INFO(0, trait)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, addTrait)
+PHP_METHOD(Componere_Abstract_Definition, addTrait)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_class_entry *trait = NULL;
@@ -787,6 +832,7 @@ PHP_METHOD(Definition, addTrait)
 #if PHP_VERSION_ID >= 70400
     {
         uint32_t num_traits          = o->ce->num_traits;
+	zend_string *parent_name     = o->ce->parent_name;
 
         o->ce->trait_names = erealloc(o->ce->trait_names, sizeof(zend_class_name) * (num_traits + 1));
         o->ce->num_traits = 1;
@@ -795,13 +841,19 @@ PHP_METHOD(Definition, addTrait)
         o->ce->trait_names[num_traits].lc_name = zend_string_tolower(trait->name);
 
         o->ce->trait_names += num_traits;
+	o->ce->parent_name = NULL;
 
+#if PHP_VERSION_ID >= 80000
+
+#else
         o->ce->ce_flags |= ZEND_ACC_IMPLEMENT_TRAITS;
+#endif
 
         zend_do_link_class(o->ce, NULL);
 
         o->ce->num_traits  = num_traits + 1;
         o->ce->trait_names -= num_traits;
+	o->ce->parent_name = parent_name;
     }
 #else
 	zend_do_implement_trait(o->ce, trait);
@@ -811,11 +863,7 @@ PHP_METHOD(Definition, addTrait)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_interface, 0, 0, 1)
-	ZEND_ARG_INFO(0, interface)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, addInterface)
+PHP_METHOD(Componere_Abstract_Definition, addInterface)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_class_entry *interface = NULL;
@@ -843,11 +891,6 @@ PHP_METHOD(Definition, addInterface)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_property, 0, 0, 2)
-	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_INFO(0, value)
-ZEND_END_ARG_INFO()
-
 static zend_always_inline zend_bool php_componere_property_check(zend_objects_store *objects, php_componere_definition_t *def) {
 	
 	if (objects->top > 1) {
@@ -871,7 +914,7 @@ static zend_always_inline zend_bool php_componere_property_check(zend_objects_st
 	return 1;
 }
 
-PHP_METHOD(Definition, addProperty)
+PHP_METHOD(Componere_Definition, addProperty)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -903,26 +946,41 @@ PHP_METHOD(Definition, addProperty)
 		return;
 	}
 
-	if (zend_declare_property(o->ce,
+#if PHP_VERSION_ID < 80000
+	if (
+#endif
+	    zend_declare_property(o->ce,
 		ZSTR_VAL(name), ZSTR_LEN(name),
 		php_componere_value_default(value),
-		php_componere_value_access(value)) == SUCCESS) {
+		php_componere_value_access(value)
+#if PHP_VERSION_ID < 80000
+		) == SUCCESS) {
+#else
+		);
+#endif
 		php_componere_value_addref(value);
 
 #if PHP_VERSION_ID >= 70400
-        zend_do_link_class(o->ce, NULL);
+		{
+			zend_string *parent_name = o->ce->parent_name;
+
+			o->ce->parent_name = NULL;
+			o->ce->properties_info_table = NULL;
+
+        		zend_do_link_class(o->ce, NULL);
+
+			o->ce->parent_name = parent_name;
+		}
 #endif
+
+#if PHP_VERSION_ID < 80000
 	}
+#endif
 
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_constant, 0, 0, 2)
-	ZEND_ARG_INFO(0, name)
-	ZEND_ARG_INFO(0, property)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, addConstant)
+PHP_METHOD(Componere_Definition, addConstant)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -969,7 +1027,7 @@ PHP_METHOD(Definition, addConstant)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(Definition, setConstant)
+PHP_METHOD(Componere_Definition, setConstant)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -1020,11 +1078,7 @@ PHP_METHOD(Definition, setConstant)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_definition_closure, 0, 0, 1)
-	ZEND_ARG_INFO(0, name)
-ZEND_END_ARG_INFO()
-
-PHP_METHOD(Definition, getClosure)
+PHP_METHOD(Componere_Definition, getClosure)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_string *name = NULL;
@@ -1051,7 +1105,7 @@ PHP_METHOD(Definition, getClosure)
 	zend_string_release(key);
 }
 
-PHP_METHOD(Definition, getClosures)
+PHP_METHOD(Componere_Definition, getClosures)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 	zend_function *function = NULL;
@@ -1075,7 +1129,7 @@ PHP_METHOD(Definition, getClosures)
 	} ZEND_HASH_FOREACH_END();
 }
 
-PHP_METHOD(Definition, isRegistered)
+PHP_METHOD(Componere_Definition, isRegistered)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 
@@ -1084,7 +1138,7 @@ PHP_METHOD(Definition, isRegistered)
 	RETURN_BOOL(o->registered);
 }
 
-PHP_METHOD(Definition, getReflector)
+PHP_METHOD(Componere_Abstract_Definition, getReflector)
 {
 	php_componere_definition_t *o = php_componere_definition_fetch(getThis());
 
@@ -1104,35 +1158,16 @@ PHP_METHOD(Definition, getReflector)
 	RETURN_ZVAL(&o->reflector, 1, 0);
 }
 
-static zend_function_entry php_componere_definition_abstract_methods[] = {
-	PHP_ME(Definition, addMethod, php_componere_definition_method, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addTrait, php_componere_definition_trait, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addInterface, php_componere_definition_interface, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, getReflector, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
-
-static zend_function_entry php_componere_definition_methods[] = {
-	PHP_ME(Definition, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addProperty, php_componere_definition_property, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, addConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, setConstant, php_componere_definition_constant, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, getClosure, php_componere_definition_closure, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, getClosures, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, register, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_ME(Definition, isRegistered, php_componere_no_arginfo, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
 
 PHP_MINIT_FUNCTION(Componere_Definition) {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere\\Abstract", "Definition", php_componere_definition_abstract_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere\\Abstract", "Definition", class_Componere_Abstract_Definition_methods);
 
 	php_componere_definition_abstract_ce = zend_register_internal_class(&ce);
 	php_componere_definition_abstract_ce->ce_flags |= ZEND_ACC_EXPLICIT_ABSTRACT_CLASS;
 
-	INIT_NS_CLASS_ENTRY(ce, "Componere", "Definition", php_componere_definition_methods);
+	INIT_NS_CLASS_ENTRY(ce, "Componere", "Definition", class_Componere_Definition_methods);
 
 	php_componere_definition_ce = zend_register_internal_class_ex(&ce, php_componere_definition_abstract_ce);
 	php_componere_definition_ce->create_object = php_componere_definition_create;

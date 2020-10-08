@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | componere                                                            |
   +----------------------------------------------------------------------+
-  | Copyright (c) Joe Watkins 2018-2019                                  |
+  | Copyright (c) Joe Watkins 2018-2020                                  |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -32,6 +32,12 @@
 #include <src/reflection.h>
 #include <src/value.h>
 
+#if PHP_VERSION_ID < 80000
+#include "componere_legacy_arginfo.h"
+#else
+#include "componere_arginfo.h"
+#endif
+
 zend_string *php_componere_name_function;
 
 static inline void php_componere_optimizer_adjust()
@@ -42,6 +48,9 @@ static inline void php_componere_optimizer_adjust()
 
 	/* disable constant substitution block pass */
 	optimizer &= ~1;
+
+	/* disable constant propagation */
+        optimizer &= ~(1<<7);
 
 	/* disable merging constants */
 	optimizer &= ~(1<<10);
@@ -115,12 +124,7 @@ PHP_MINFO_FUNCTION(componere)
 }
 /* }}} */
 
-ZEND_BEGIN_ARG_INFO_EX(php_componere_cast_arginfo, 0, 0, 2)
-       ZEND_ARG_INFO(0, Type)
-       ZEND_ARG_INFO(0, object)
-ZEND_END_ARG_INFO()
-
-PHP_FUNCTION(Componere_cast)
+PHP_FUNCTION(cast)
 {
        zend_class_entry *target = NULL;
        zval *object = NULL;
@@ -133,7 +137,7 @@ PHP_FUNCTION(Componere_cast)
        php_componere_cast(return_value, object, target, 0);
 }
 
-PHP_FUNCTION(Componere_cast_by_ref)
+PHP_FUNCTION(cast_by_ref)
 {
        zend_class_entry *target = NULL;
        zval *object = NULL;
@@ -145,15 +149,6 @@ PHP_FUNCTION(Componere_cast_by_ref)
 
        php_componere_cast(return_value, object, target, 1);
 }
-
-/* {{{ componere_functions[]
- */
-static const zend_function_entry componere_functions[] = {
-        ZEND_NS_NAMED_FE("Componere", cast, zif_Componere_cast, php_componere_cast_arginfo)
-        ZEND_NS_NAMED_FE("Componere", cast_by_ref, zif_Componere_cast_by_ref, php_componere_cast_arginfo)
-	PHP_FE_END
-};
-/* }}} */
 
 /* {{{ componere_module_deps[] */
 static const zend_module_dep componere_module_deps[] = {
@@ -168,7 +163,7 @@ zend_module_entry componere_module_entry = {
 	NULL,
 	componere_module_deps,
 	"componere",
-	componere_functions,
+	ext_functions,
 	PHP_MINIT(componere),
 	PHP_MSHUTDOWN(componere),
 	PHP_RINIT(componere),
