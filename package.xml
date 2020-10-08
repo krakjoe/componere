@@ -23,9 +23,9 @@
   <email>remi@php.net</email>
   <active>yes</active>
  </lead>
- <date>2019-09-18</date>
+ <date>2020-10-08</date>
  <version>
-  <release>3.1.1</release>
+  <release>3.1.2</release>
   <api>3.0.0</api>
  </version>
  <stability>
@@ -34,12 +34,19 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Fix compatibility with 7.4.0RC1
+- Fix #25 Segfault with OpCache and abstract classes
+- Fix #26 Error: Class 0x01 not found" if Definition( 'MyDerived', 'MyClass' )
+- Fix #29 Protected and Private properties not working as expected
+- Fix #30 Can NOT addProperty in extending class
+- Compatibility with PHP 8
  </notes>
  <contents>
   <dir name="/">
    <file name="LICENSE" role="doc" />
    <file name="componere.c" role="src" />
+   <file name="componere.stub.php" role="src" />
+   <file name="componere_arginfo.h" role="src" />
+   <file name="componere_legacy_arginfo.h" role="src" />
    <file name="config.m4" role="src" />
    <file name="config.w32" role="src" />
    <file name="php_componere.h" role="src" />
@@ -49,14 +56,26 @@
     <file name="common.h" role="src" />
     <file name="definition.c" role="src" />
     <file name="definition.h" role="src" />
+    <file name="definition.stub.php" role="src" />
+    <file name="definition_arginfo.h" role="src" />
+    <file name="definition_legacy_arginfo.h" role="src" />
     <file name="method.c" role="src" />
     <file name="method.h" role="src" />
+    <file name="method.stub.php" role="src" />
+    <file name="method_arginfo.h" role="src" />
+    <file name="method_legacy_arginfo.h" role="src" />
     <file name="patch.c" role="src" />
     <file name="patch.h" role="src" />
+    <file name="patch.stub.php" role="src" />
+    <file name="patch_arginfo.h" role="src" />
+    <file name="patch_legacy_arginfo.h" role="src" />
     <file name="reflection.c" role="src" />
     <file name="reflection.h" role="src" />
     <file name="value.c" role="src" />
     <file name="value.h" role="src" />
+    <file name="value.stub.php" role="src" />
+    <file name="value_arginfo.h" role="src" />
+    <file name="value_legacy_arginfo.h" role="src" />
    </dir> <!-- src -->
    <dir name="tests">
     <file name="000.phpt" role="test" />
@@ -183,6 +202,21 @@
  <providesextension>componere</providesextension>
  <extsrcrelease />
  <changelog>
+  <release>
+   <date>2019-09-18</date>
+   <version>
+    <release>3.1.1</release>
+    <api>3.0.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Fix compatibility with 7.4.0RC1
+   </notes>
+  </release>
   <release>
    <date>2019-05-30</date>
    <version>
